@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <title>RuwwadBusiness — دخول لوحة الطاقم — رواد الأعمال</title>
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #14141a;
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --err: #fb7185;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.45rem;
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45);
+    }
+    h1 { font-size: 1.15rem; font-weight: 800; margin-bottom: 0.35rem; }
+    .muted { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+    input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0c0c10;
+      color: var(--text);
+      font-size: 0.95rem;
+      margin-bottom: 0.85rem;
+    }
+    button {
+      width: 100%;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: linear-gradient(135deg, var(--accent), #db2777);
+      color: #fff;
+      margin-top: 0.25rem;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .err {
+      display: none;
+      margin-bottom: 0.85rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    .err.show { display: block; }
+    .product-id {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin: -0.15rem 0 0.5rem;
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>لوحة الطاقم</h1>
+    <p class="product-id">RuwwadBusiness</p>
+    <p class="muted">أدخل كلمة المرور المحفوظة في ملف البيئة للخادم (<code dir="ltr">TEAM_PANEL_PASSWORD</code>).</p>
+    <div id="flash" class="err" role="alert"></div>
+    <form id="f">
+      <label for="pw">كلمة المرور</label>
+      <input id="pw" type="password" autocomplete="current-password" required />
+      <button type="submit" id="btn">دخول</button>
+    </form>
+  </div>
+  <script>
+    function nextPath() {
+      let p = window.location.pathname || '/';
+      if (!p || p === '/') p = '/';
+      return p;
+    }
+    document.getElementById('f').onsubmit = async (ev) => {
+      ev.preventDefault();
+      const flash = document.getElementById('flash');
+      const btn = document.getElementById('btn');
+      flash.classList.remove('show');
+      flash.textContent = '';
+      const password = document.getElementById('pw').value;
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/team-panel/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ password }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          flash.textContent = data.error || 'فشل الدخول';
+          flash.classList.add('show');
+          btn.disabled = false;
+          return;
+        }
+        window.location.assign(data.redirect || nextPath());
+      } catch {
+        flash.textContent = 'تعذّر الاتصال بالخادم.';
+        flash.classList.add('show');
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

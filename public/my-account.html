@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-public-copy-page="myAccount">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <link rel="stylesheet" href="/css/public-customer-nav.css" />
+  <title>RuwwadBusiness — حسابي — رواد الأعمال</title>
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #0f0f12;
+      --elevated: #14141a;
+      --border: rgba(255, 255, 255, 0.075);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --accent-dim: #db2777;
+      --accent-glow: rgba(236, 72, 153, 0.22);
+      --gold: #fbcfe8;
+      --ok: #34d399;
+      --err: #fb7185;
+      --input-bg: #0c0c10;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Tajawal", "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(1200px 520px at 15% -10%, rgba(236, 72, 153, 0.09), transparent 52%),
+                  radial-gradient(900px 480px at 90% 40%, rgba(236, 72, 153, 0.05), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    a { color: #f9a8d4; font-weight: 600; text-decoration: none; }
+    a:hover { color: #fbcfe8; text-decoration: underline; }
+    a.part-open-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 1rem;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-dim), var(--accent));
+      color: #fff !important;
+      font-weight: 700;
+      text-decoration: none !important;
+      box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    a.part-open-link:hover {
+      filter: brightness(1.06);
+      color: #fff !important;
+    }
+    .wrap {
+      max-width: min(1200px, 96vw);
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2rem) max(2.5rem, env(safe-area-inset-bottom, 0px));
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.95rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(165deg, #12121a 0%, #0a0a0e 55%, rgba(8, 8, 9, 0.97) 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand span {
+      background: linear-gradient(135deg, #fbcfe8, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .brand-product-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-inline-start: 0.45rem;
+      vertical-align: middle;
+      unicode-bidi: isolate;
+    }
+    .hero-main { min-width: 0; }
+    .hero {
+      margin-top: clamp(1rem, 2.5vw, 1.5rem);
+      text-align: center;
+      padding: clamp(0.85rem, 2vw, 1.25rem) 0 clamp(0.75rem, 2vw, 1.1rem);
+    }
+    .hero h1 {
+      font-size: clamp(1.35rem, 2.5vw + 0.85rem, 1.85rem);
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+      line-height: 1.28;
+    }
+    .hero-side {
+      display: none;
+      border-radius: calc(var(--radius) + 6px);
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.14) 0%, rgba(20, 20, 26, 0.92) 42%, var(--elevated) 100%);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      min-height: 10rem;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 900px) {
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.12fr) minmax(200px, 320px);
+        gap: clamp(1rem, 2.5vw, 2rem);
+        align-items: center;
+        text-align: right;
+      }
+      .hero-side { display: block; }
+    }
+    .hero-side::after {
+      content: "";
+      position: absolute;
+      inset: -40% -20%;
+      background: radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.25), transparent 55%);
+      pointer-events: none;
+    }
+    .card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+      margin-top: 1rem;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.26);
+    }
+    .card h2 { font-size: 1rem; color: var(--gold); margin-bottom: 0.75rem; font-weight: 700; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 148px), 1fr));
+      gap: 0.75rem;
+    }
+    @media (min-width: 960px) {
+      .stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+    .stat {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem;
+      text-align: center;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.22);
+    }
+    .stat .num { font-size: 1.45rem; font-weight: 800; color: var(--accent); }
+    .stat .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+    .profile-grid {
+      display: grid;
+      gap: 0.45rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .profile-grid strong { color: var(--text); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.5rem; }
+    th, td { padding: 0.4rem 0.35rem; border-bottom: 1px solid var(--border); text-align: right; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.74rem; }
+    td.mono { direction: ltr; text-align: left; font-family: ui-monospace, Consolas, monospace; }
+    .flash {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .flash.ok {
+      display: block;
+      background: rgba(52, 211, 153, 0.14);
+      color: var(--ok);
+      border: 1px solid rgba(52, 211, 153, 0.38);
+    }
+    .flash.err {
+      display: block;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    #partCampSelect {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.9rem;
+      margin-top: 0.28rem;
+      font-family: inherit;
+    }
+    #btnPortalRegisterInteraction {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    #btnPortalVerifyParticipationLink {
+      display: none;
+      cursor: pointer;
+      border: 1px solid rgba(236, 72, 153, 0.42);
+      border-radius: 10px;
+      padding: 0.52rem 1.05rem;
+      font-weight: 700;
+      font-size: 0.88rem;
+      font-family: inherit;
+      background: rgba(236, 72, 153, 0.14);
+      color: var(--gold);
+      margin-top: 0.45rem;
+    }
+    #btnPortalVerifyParticipationLink:hover {
+      background: rgba(236, 72, 153, 0.24);
+      border-color: rgba(236, 72, 153, 0.55);
+    }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.65rem; line-height: 1.55; }
+    .paste-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      margin-top: 1rem;
+    }
+    .paste-card label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .paste-card input {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.88rem;
+      margin-bottom: 0.65rem;
+      font-family: inherit;
+    }
+    .paste-card button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+    .portal-svc-host {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .portal-svc-platform {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 15, 18, 0.65);
+      overflow: hidden;
+    }
+    .portal-svc-platform-head {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.75rem;
+      margin: 0;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: start;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--gold);
+      cursor: pointer;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      background: linear-gradient(165deg, rgba(22, 22, 28, 0.98), rgba(14, 14, 17, 0.92));
+      transition: filter 0.12s ease;
+    }
+    button.portal-svc-platform-head {
+      -webkit-tap-highlight-color: transparent;
+    }
+    .portal-svc-platform-head:hover {
+      filter: brightness(1.06);
+    }
+    .portal-svc-platform-head:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .portal-svc-platform-chevron {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      opacity: 0.8;
+      transition: transform 0.2s ease;
+      margin-inline-start: auto;
+      padding-inline-start: 0.35rem;
+    }
+    .portal-svc-platform-head[aria-expanded="true"] .portal-svc-platform-chevron {
+      transform: rotate(180deg);
+    }
+    .portal-svc-platform-title {
+      flex: 1;
+      min-width: 0;
+    }
+    .portal-svc-platform-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      overflow: hidden;
+    }
+    .portal-svc-platform-icon svg {
+      display: block;
+    }
+    .portal-svc-platform-icon--instagram {
+      background: linear-gradient(145deg, #f58529, #dd2a7b 45%, #8134af);
+    }
+    .portal-svc-platform-icon--twitter {
+      background: #000;
+      color: #fff;
+    }
+    .portal-svc-platform-icon--youtube {
+      background: #e62117;
+      color: #fff;
+    }
+    .portal-svc-platform-icon--snapchat {
+      background: #fffc00;
+      color: #000;
+    }
+    .portal-svc-platform-icon--tiktok {
+      background: #121212;
+      color: #fff;
+    }
+    .portal-svc-platform-icon--general {
+      background: rgba(236, 72, 153, 0.18);
+      color: var(--gold);
+    }
+    .portal-svc-platform-body {
+      padding: 0.45rem 0.55rem 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    /** بدون هذا، display:flex أعلاه قد يطغى على سلوك خاصية hidden في بعض المتصفحات */
+    .portal-svc-platform-body[hidden] {
+      display: none !important;
+    }
+    .portal-svc-opt {
+      display: flex;
+      gap: 0.45rem;
+      align-items: flex-start;
+      cursor: pointer;
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .portal-svc-opt input {
+      width: auto;
+      margin-top: 0.22rem;
+      accent-color: var(--accent);
+      flex-shrink: 0;
+    }
+    .portal-svc-opt-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      flex: 1;
+      min-width: 0;
+    }
+    .portal-svc-opt-title {
+      font-weight: 600;
+    }
+    .portal-svc-opt-hint {
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.55;
+    }
+    .portal-svc-qty-row {
+      margin-top: 0.3rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.55rem;
+    }
+    .portal-svc-qty-row[hidden] {
+      display: none !important;
+    }
+    .portal-svc-qty-label {
+      font-size: 0.74rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .portal-svc-qty-input {
+      padding: 0.35rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .portal-svc-qty-est {
+      font-size: 0.74rem;
+      color: var(--ok);
+    }
+    #portalSvcPricingTotals {
+      margin-top: 0.4rem;
+      padding: 0.5rem 0.6rem;
+      border-radius: 10px;
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: rgba(236, 72, 153, 0.06);
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+    .portal-svc-btn {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    #portalSvcFlash.flash.ok {
+      display: block;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      background: rgba(52, 211, 153, 0.14);
+      color: var(--ok);
+      border: 1px solid rgba(52, 211, 153, 0.38);
+    }
+    #portalSvcFlash.flash.err {
+      display: block;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+
+    /* شاشة الأيقونات + شاشة القسم مع زر الرجوع */
+    .portal-hub-screen {
+      margin-top: 0.35rem;
+    }
+    .portal-hub-lead {
+      text-align: center;
+      margin: 0.75rem 0 0.5rem;
+      font-size: 0.84rem;
+    }
+    .portal-hub-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.35rem;
+    }
+    @media (min-width: 520px) {
+      .portal-hub-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+    @media (min-width: 900px) {
+      .portal-hub-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 52rem;
+        margin-inline: auto;
+      }
+    }
+    .portal-hub-tile {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 5.75rem;
+      padding: 0.75rem 0.5rem;
+      border-radius: calc(var(--radius) + 4px);
+      border: 1px solid var(--border);
+      background: linear-gradient(165deg, rgba(20, 20, 26, 0.98), rgba(15, 15, 18, 0.92));
+      color: var(--text);
+      font-family: inherit;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+    .portal-hub-tile:hover {
+      border-color: rgba(236, 72, 153, 0.42);
+      box-shadow: 0 6px 26px rgba(236, 72, 153, 0.12);
+    }
+    .portal-hub-tile:active {
+      transform: scale(0.98);
+    }
+    a.portal-hub-tile {
+      text-decoration: none;
+    }
+    a.portal-hub-tile:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .portal-hub-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(236, 72, 153, 0.14);
+      color: var(--gold);
+    }
+    .portal-hub-icon svg {
+      width: 1.35rem;
+      height: 1.35rem;
+      stroke-width: 2;
+    }
+    .portal-hub-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.35;
+      color: var(--gold);
+    }
+    .portal-detail-screen {
+      margin-top: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      min-height: min(70vh, calc(100dvh - 8rem));
+    }
+    .portal-detail-screen[hidden] {
+      display: none !important;
+    }
+    .portal-detail-bar {
+      position: sticky;
+      top: 0;
+      z-index: 9;
+      margin: 0 calc(-1 * clamp(0.5rem, 2vw, 0.75rem)) 0.65rem;
+      padding: 0.5rem clamp(0.5rem, 2vw, 0.75rem) 0.55rem;
+      background: linear-gradient(180deg, rgba(7, 7, 8, 0.96) 85%, rgba(7, 7, 8, 0.82) 100%);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .portal-detail-bar-inner {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: nowrap;
+    }
+    .portal-back-btn {
+      flex: 0 0 auto;
+      cursor: pointer;
+      border: 1px solid rgba(236, 72, 153, 0.38);
+      border-radius: 12px;
+      padding: 0.55rem 0.85rem;
+      font-weight: 800;
+      font-size: 0.82rem;
+      font-family: inherit;
+      color: var(--gold);
+      background: rgba(236, 72, 153, 0.12);
+      transition: background 0.15s ease;
+      white-space: nowrap;
+    }
+    .portal-back-btn:hover {
+      background: rgba(236, 72, 153, 0.2);
+    }
+    .portal-detail-title {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    /* العنوان يظهر في الشريط؛ إخفاء المكرر داخل البطاقة مع الإبقاء للقرّاء فقط */
+    .portal-detail-scroll .portal-view-section.is-active > h2:first-of-type {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .portal-detail-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+      position: relative;
+    }
+    .portal-view-section {
+      display: none;
+      margin-top: 0;
+    }
+    .portal-view-section.is-active {
+      display: block;
+    }
+    .portal-view-section.card {
+      margin-top: 0;
+    }
+    .portal-view-section.card + .portal-view-section.card.is-active {
+      margin-top: 1rem;
+    }
+    @media (max-width: 768px) {
+      .portal-detail-scroll .portal-table-scroll {
+        max-height: min(58vh, 440px);
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        margin-top: 0.35rem;
+      }
+      .portal-detail-scroll .portal-table-scroll table {
+        margin-top: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
+    <div class="nav-actions">
+      <span class="public-customer-nav" aria-label="روابط المشترك">
+        <a class="public-customer-nav__pill" href="/join">الاشتراك</a>
+        <a class="public-customer-nav__pill" href="/subscriber-login">دخول حسابي</a>
+        <span class="public-customer-nav__pill public-customer-nav__pill--current">حسابي</span>
+      </span>
+      <a href="/api/portal/logout" data-copy="navLogout">خروج أو حساب آخر</a>
+    </div>
+  </nav>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-main">
+        <h1 data-copy="heroTitle">حسابي</h1>
+        <p style="color:var(--muted);font-size:0.92rem" data-copy="heroSubtitle">
+          اطلع على الإحصائيات ثم اختر أيقونة للانتقال إلى القسم المناسب؛ استخدم «رجوع إلى حسابي» للعودة إلى هذه الشاشة.
+        </p>
+      </div>
+      <aside class="hero-side" aria-hidden="true"></aside>
+    </header>
+
+    <div id="gateErrFetch" class="flash err" role="alert" style="display:none;margin-top:1rem"></div>
+
+    <div id="mainPanels" style="display:none">
+      <div id="portalHubScreen" class="portal-hub-screen">
+      <div class="stats">
+        <div class="stat">
+          <div id="statPoints" class="num">—</div>
+          <div class="lbl" data-copy="statPoints">النقاط الحالية</div>
+        </div>
+        <div class="stat">
+          <div id="statPaid" class="num">—</div>
+          <div class="lbl" data-copy="statPaid">إجمالي المدفوعات (ر.س)</div>
+        </div>
+        <div class="stat">
+          <div id="statParticipations" class="num">—</div>
+          <div class="lbl" data-copy="statParticip">المشاركات المسجّلة</div>
+        </div>
+        <div class="stat">
+          <div id="statRequests" class="num">—</div>
+          <div class="lbl" data-copy="statRequests">طلبات الخدمة / النقاط</div>
+        </div>
+      </div>
+
+      <p class="portal-hub-lead hint">اضغط أيقونة لفتح القسم؛ بعد الانتهاء اضغط «رجوع إلى حسابي» للعودة هنا.</p>
+
+      <div class="portal-hub-grid" role="navigation" aria-label="أقسام حسابي">
+        <button type="button" class="portal-hub-tile" data-portal-view="secPortalServiceRequest">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+          </span>
+          <span class="portal-hub-label">طلب خدمة</span>
+        </button>
+        <button type="button" class="portal-hub-tile" data-portal-view="secParticipate">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a2 2 0 002 2h2l5 4V5l-5 4H5a2 2 0 00-2 2z"/><path d="M16 9a5 5 0 010 6"/><path d="M19 7a9 9 0 010 10"/></svg>
+          </span>
+          <span class="portal-hub-label">مشاركة بحملة</span>
+        </button>
+        <a href="/campaign-track" class="portal-hub-tile portal-hub-tile--link">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-6"/></svg>
+          </span>
+          <span class="portal-hub-label">تتبع الحملة</span>
+        </a>
+        <button type="button" class="portal-hub-tile" data-portal-view="secActivity">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          </span>
+          <span class="portal-hub-label">سجل الحركات</span>
+        </button>
+        <button type="button" class="portal-hub-tile" data-portal-view="secProfile">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span class="portal-hub-label">بياناتي</span>
+        </button>
+        <button type="button" class="portal-hub-tile" data-portal-view="secInteractions">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 7 7 .5-5.5 4.5 2 7L12 17l-6.5 4 2-7L2 9.5 9 9z"/></svg>
+          </span>
+          <span class="portal-hub-label">تفاعلاتي</span>
+        </button>
+        <button type="button" class="portal-hub-tile" data-portal-view="secPayments">
+          <span class="portal-hub-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          </span>
+          <span class="portal-hub-label">مدفوعاتي</span>
+        </button>
+      </div>
+      </div>
+
+      <div id="portalDetailScreen" class="portal-detail-screen" hidden>
+        <div class="portal-detail-bar">
+          <div class="portal-detail-bar-inner">
+            <button type="button" class="portal-back-btn" id="portalBackToHub">رجوع إلى حسابي</button>
+            <div id="portalDetailTitle" class="portal-detail-title" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="portal-detail-scroll" id="portalDetailScroll">
+
+      <section class="card portal-view-section" id="secPortalServiceRequest">
+        <h2 data-copy="secPortalSvcTitle">طلب خدمة مدفوعة أو نقاط</h2>
+        <p class="hint" data-copy-html="secPortalSvcHint">
+          كمشترك، أرسل طلبك من هنا ليُربَط تلقائياً بحسابك. سيظهر في <strong>سجل التحركات</strong> بعد تسجيله.
+        </p>
+        <form id="portalSvcForm">
+          <input type="hidden" id="portalSvcPhoneNorm" value="" />
+          <div style="display: grid; gap: 0.65rem; margin-top: 0.5rem">
+            <div>
+              <label for="portalSvcKind">نوع الطلب *</label>
+              <select id="portalSvcKind" required style="width:100%;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:0.9rem;margin-top:0.28rem;font-family:inherit">
+                <option value="paid_service">خدمة مدفوعة</option>
+                <option value="points">نقاط / برنامج النقاط</option>
+                <option value="both">الخدمة المدفوعة والنقاط معاً</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div>
+              <span class="hint" style="display: block; margin-bottom: 0.35rem">ما الذي تهتم به من خدماتنا؟ (اختياري)</span>
+              <div id="portalSvcOptionsHost" class="portal-svc-host" aria-label="أنواع الخدمات"></div>
+              <div id="portalSvcPricingTotals" hidden></div>
+              <p class="hint" style="margin-top: 0.35rem; margin-bottom: 0; font-size: 0.78rem; line-height: 1.55">
+                اضغط عنوان كل منصة (الأيقونة والاسم) لعرض الخدمات أو إخفائها. الخيارات مرتبة تحت <strong>أيقونة كل منصة</strong>. الإرشادات تقريبية؛ لخدمات ذات جدول كمية يظهر تقدير
+                <strong>ريال + نقاط (⌈كمية÷2⌉)</strong>؛ لا يُخصم من رصيدك حتى يعتمد الفريق التنفيذ. إن نقصت خدمات (مثل إكس) راجع لوحة الفريق: اختر <strong>كل الخدمات</strong> أو حدّد جميع الصفوف المطلوبة في «خدمات محددة».
+              </p>
+            </div>
+            <div>
+              <label for="portalSvcTitle">عنوان الطلب *</label>
+              <input id="portalSvcTitle" type="text" required maxlength="200" style="width:100%;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);margin-top:0.28rem;font-family:inherit" placeholder="عنوان مختصر لطلبك" />
+            </div>
+            <div>
+              <label for="portalSvcDetails">الوصف *</label>
+              <textarea id="portalSvcDetails" required maxlength="2500" rows="5" style="width:100%;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:inherit;font-size:0.9rem;line-height:1.5;resize:vertical;margin-top:0.28rem" placeholder="اشرح طلبك بالتفصيل…"></textarea>
+            </div>
+            <div>
+              <label for="portalSvcName">الاسم للتواصل (اختياري)</label>
+              <input id="portalSvcName" type="text" maxlength="120" style="width:100%;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);margin-top:0.28rem;font-family:inherit" placeholder="كما في حسابك أو تحديثاً" />
+            </div>
+          </div>
+          <div style="margin-top: 0.75rem">
+            <button type="submit" class="portal-svc-btn" id="btnPortalSvcSubmit">إرسال الطلب من حسابي</button>
+          </div>
+          <div id="portalSvcFlash" style="display: none; margin-top: 0.65rem" role="status"></div>
+        </form>
+      </section>
+
+      <section class="card portal-view-section" id="secParticipate">
+        <h2 data-copy="secParticipateTitle">المشاركة في حملة (تسجيل التفاعل)</h2>
+        <p class="hint" data-copy-html="secParticipateHint">افتح الوجهة من الزر أدناه إن وُجد، وأكمل الإجراء (إعجاب، متابعة، تعليق…) من تطبيق المنصة أو الموقع نفسه؛ الموقع لا يتلقّى إشعاراً تلقائياً بالإعجاب أو غيره. بعد ذلك عد إلى هذه الصفحة واضغط «تسجيل مشاركتي». تُضاف النقاط وفق سياسة المنصة (مرّة واحدة لكل حملة). إن زودك الفريق ب<strong>كود تحقق</strong> مرتبط بك وب هذه الحملة فقط، يُخفى رابط التفاعل حتى تُدخل الكود وتضغط «تحقق من الكود وفتح رابط التفاعل»، ثم أدخل الكود أيضاً عند «تسجيل مشاركتي».</p>
+        <div id="partFlash" class="flash" style="display:none;margin-top:0.65rem" role="status"></div>
+        <label for="partCampSelect" data-copy="labelCamp">اختر الحملة</label>
+        <select id="partCampSelect" aria-describedby="partCampDetail"><option value="">— اختر حملة —</option></select>
+        <div id="partCampDetail" class="hint" style="margin-top:0.45rem;line-height:1.55"></div>
+        <label for="partVerifyCode" style="display:block;margin-top:0.65rem"><span data-copy="labelVerifyCode">كود التحقق (اختياري)</span></label>
+        <input id="partVerifyCode" type="text" dir="ltr" style="text-align:left;width:100%;padding:0.55rem 0.7rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);margin-top:0.28rem;font-family:inherit" data-copy-placeholder="placeholderVerifyCode" placeholder="مثل RW-… إن طلب منك الفريق" spellcheck="false" autocomplete="off" />
+        <button type="button" id="btnPortalVerifyParticipationLink" style="display:none">تحقق من الكود وفتح رابط التفاعل</button>
+        <div style="margin-top:0.75rem">
+          <button type="button" id="btnPortalRegisterInteraction" data-copy="btnRegisterParticipation">تسجيل مشاركتي والحصول على النقاط</button>
+        </div>
+      </section>
+
+      <section class="card portal-view-section" id="secActivity">
+        <h2 data-copy="secActivityTitle">سجل التحركات</h2>
+        <p class="hint" data-copy-html="secActivityHint">يُرتَّب من الأحدث إلى الأقدم. <strong>مدفوع لك</strong> تعني دفعة سجّلها الفريق لك. <strong>مشاركة (مجانية لك)</strong> تعني قيمة الفعل لا يتحملها المشترك — بينما قد تكون الحملة نفسها مدفوعة للمنصة من المعلن.</p>
+        <div class="portal-table-scroll" style="overflow:auto">
+          <table dir="rtl">
+            <thead>
+              <tr>
+                <th data-copy="activityThDate">التاريخ</th>
+                <th data-copy="activityThBucket">التصنيف</th>
+                <th data-copy="activityThDetail">الحدث والتفاصيل</th>
+                <th data-copy="activityThPoints">نقاط</th>
+                <th data-copy="activityThAmount">مبلغ (ر.س)</th>
+              </tr>
+            </thead>
+            <tbody id="tbActivityLog"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card portal-view-section" id="secProfile">
+        <h2 data-copy="secProfileTitle">بيانات مختصرة</h2>
+        <div id="profileGrid" class="profile-grid"></div>
+      </section>
+
+      <section class="card portal-view-section" id="secInteractions">
+        <h2 data-copy="secInteractionsTitle">المشاركات في الحملات (التفاعلات المسجّلة)</h2>
+        <p class="hint" data-copy-html="secInteractionsHint">كل صف يعني أن تم تسجيل تفاعلك في تلك الحملة — إما من إدارة المنصة أو من قسم <strong>مشاركة بحملة</strong> في هذه الصفحة. عمود «تصنيف الحملة» يوضّح إن كانت الحملة مدفوعة للمنصة من المعلن أم لا — من غير أن يُفرض على المشترك رسوم اشتراك هنا.</p>
+        <div class="portal-table-scroll" style="overflow:auto">
+          <table dir="rtl">
+            <thead>
+              <tr>
+                <th data-copy="interactionsThCampaign">الحملة</th>
+                <th data-copy="interactionsThType">نوع التفاعل</th>
+                <th data-copy="interactionsThBilling">تصنيف الحملة</th>
+                <th data-copy="interactionsThPoints">نقاط الصف</th>
+                <th data-copy="interactionsThDate">التاريخ</th>
+              </tr>
+            </thead>
+            <tbody id="tbInteractions"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card portal-view-section" id="secPayments">
+        <h2 data-copy="secPaymentsTitle">المدفوعات</h2>
+        <p class="hint" data-copy="secPaymentsHint">تُسجَّل يدوياً عند استلام دفع منك؛ عند ربط بوابة دفع لاحقاً يمكن أتمتة هذا القسم.</p>
+        <div class="portal-table-scroll" style="overflow:auto">
+          <table dir="rtl">
+            <thead>
+              <tr>
+                <th data-copy="paymentsThAmount">المبلغ (ر.س)</th>
+                <th data-copy="paymentsThLabel">البيان</th>
+                <th data-copy="paymentsThNote">ملاحظة</th>
+                <th data-copy="paymentsThDate">التاريخ</th>
+              </tr>
+            </thead>
+            <tbody id="tbPayments"></tbody>
+          </table>
+        </div>
+      </section>
+
+        </div>
+      </div>
+    </div>
+
+    <footer style="font-size:0.82rem;color:var(--muted)" data-copy="footerText">RuwwadBusiness — رواد الأعمال — حسابك الشخصي.</footer>
+  </div>
+
+  <script src="/js/public-copy.js"></script>
+  <script src="/js/instagram-qty-pricing.js"></script>
+  <script>
+    function qs(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+    /** إن وُجد ?t= في العنوان (رابط من الفريق) يُفضَّل تمريره حتى يثبت الخادم الجلسة ثم يعيد التوجيه بدون المعرّف */
+    function portalQuerySuffix() {
+      const t = qs('t');
+      return t && t.length >= 24 ? `t=${encodeURIComponent(t)}` : '';
+    }
+    function portalApiUrl(basePath) {
+      const q = portalQuerySuffix();
+      if (!q) return basePath;
+      const sep = basePath.includes('?') ? '&' : '?';
+      return `${basePath}${sep}${q}`;
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    const portalHubScreenEl = () => document.getElementById('portalHubScreen');
+    const portalDetailScreenEl = () => document.getElementById('portalDetailScreen');
+    const portalDetailScrollEl = () => document.getElementById('portalDetailScroll');
+
+    function openPortalAccountSection(sectionId) {
+      const hub = portalHubScreenEl();
+      const detail = portalDetailScreenEl();
+      const scrollEl = portalDetailScrollEl();
+      const titleEl = document.getElementById('portalDetailTitle');
+      if (!hub || !detail || !scrollEl || !sectionId) return;
+      const sec = document.getElementById(sectionId);
+      document.querySelectorAll('.portal-view-section').forEach((s) => {
+        s.classList.toggle('is-active', s.id === sectionId);
+      });
+      if (titleEl) {
+        const h2 = sec?.querySelector('h2');
+        titleEl.textContent = h2 ? h2.textContent.replace(/\s+/g, ' ').trim() : '';
+      }
+      hub.hidden = true;
+      detail.hidden = false;
+      scrollEl.scrollTop = 0;
+      window.scrollTo(0, 0);
+      const backBtn = document.getElementById('portalBackToHub');
+      if (backBtn) backBtn.focus();
+    }
+
+    function closePortalAccountDetail() {
+      const hub = portalHubScreenEl();
+      const detail = portalDetailScreenEl();
+      const scrollEl = portalDetailScrollEl();
+      const titleEl = document.getElementById('portalDetailTitle');
+      if (!hub || !detail) return;
+      document.querySelectorAll('.portal-view-section').forEach((sec) => sec.classList.remove('is-active'));
+      if (titleEl) titleEl.textContent = '';
+      detail.hidden = true;
+      hub.hidden = false;
+      if (scrollEl) scrollEl.scrollTop = 0;
+      window.scrollTo(0, 0);
+    }
+
+    function wirePortalAccountHub() {
+      document.querySelectorAll('.portal-hub-tile[data-portal-view]').forEach((btn) => {
+        btn.addEventListener('click', () => openPortalAccountSection(btn.getAttribute('data-portal-view')));
+      });
+      const backBtn = document.getElementById('portalBackToHub');
+      if (backBtn) backBtn.addEventListener('click', closePortalAccountDetail);
+    }
+    wirePortalAccountHub();
+    function campEmptyLabel() {
+      try {
+        const x = window.__PUBLIC_COPY__?.myAccount?.campOptionEmpty;
+        if (x != null && String(x).trim()) return String(x).trim();
+      } catch (e) {}
+      return '— اختر حملة —';
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      try {
+        return new Date(iso).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' });
+      } catch {
+        return '—';
+      }
+    }
+
+    let portalParticipationCampaigns = [];
+    const RW_PART_URL_STORAGE_KEY = 'rwPortalParticipationUnlockedUrls';
+
+    function readParticipationUnlockedUrls() {
+      try {
+        const raw = sessionStorage.getItem(RW_PART_URL_STORAGE_KEY);
+        const o = raw ? JSON.parse(raw) : {};
+        return o && typeof o === 'object' ? o : {};
+      } catch {
+        return {};
+      }
+    }
+
+    function setParticipationUnlockedUrl(campaignId, url) {
+      try {
+        const o = readParticipationUnlockedUrls();
+        o[campaignId] = url;
+        sessionStorage.setItem(RW_PART_URL_STORAGE_KEY, JSON.stringify(o));
+      } catch {
+        /* ignore */
+      }
+    }
+
+    function getParticipationUnlockedUrl(campaignId) {
+      const u = readParticipationUnlockedUrls()[campaignId];
+      return typeof u === 'string' && /^https?:\/\//i.test(u.trim()) ? u.trim() : '';
+    }
+
+    function setVerifyCodeLabelLocked(locked) {
+      const verifyLblSpan = document.querySelector('[data-copy="labelVerifyCode"]');
+      if (!verifyLblSpan) return;
+      if (locked) {
+        verifyLblSpan.textContent = 'كود التحقق (مطلوب لهذه الحملة)';
+        return;
+      }
+      try {
+        const fromCopy = window.__PUBLIC_COPY__?.myAccount?.labelVerifyCode;
+        if (fromCopy != null && String(fromCopy).trim()) {
+          verifyLblSpan.textContent = String(fromCopy).trim();
+          return;
+        }
+      } catch (e) {}
+      verifyLblSpan.textContent = 'كود التحقق (اختياري)';
+    }
+
+    let participationPtsHint = '';
+
+    const SOCIAL_QP = (platform, platformLabelAr, pricePer1000, minQty, maxQty, durationHintAr) => ({
+      platform,
+      platformLabelAr,
+      pricePer1000,
+      minQty,
+      maxQty,
+      durationHintAr,
+      pointsFormulaAr: '⌈الكمية ÷ 2⌉',
+      sarFormulaAr: '(الكمية ÷ 1000) × سعر الألف (ريال)',
+    });
+    const IG_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('instagram', 'إنستغرام', pricePer1000, minQty, maxQty, durationHintAr);
+    const TW_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('twitter', 'إكس (تويتر)', pricePer1000, minQty, maxQty, durationHintAr);
+    const TT_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('tiktok', 'تيك توك', pricePer1000, minQty, maxQty, durationHintAr);
+    const SN_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('snapchat', 'سناب شات', pricePer1000, minQty, maxQty, durationHintAr);
+
+    const FALLBACK_SVC_OPTIONS = [
+      { id: 'campaigns', labelAr: 'المشاركة في الحملات والفرص التسويقية', pricingHintAr: '', quantityPricing: null },
+      {
+        id: 'brand_collab',
+        labelAr: 'تعاون مع علامات تجارية',
+        pricingHintAr: 'يختلف حسب العلامة ونطاق التعاون؛ وضّح نوع المحتوى والمدة في الوصف.',
+        quantityPricing: null,
+      },
+      {
+        id: 'reviews',
+        labelAr: 'مراجعات وتجارب منتجات',
+        pricingHintAr: 'غالباً يشمل استلام منتج أو زيارة؛ اذكر ما إن كان لديك منتج محدد.',
+        quantityPricing: null,
+      },
+      {
+        id: 'events',
+        labelAr: 'فعاليات وزيارات',
+        pricingHintAr: 'يُسعَّر حسب نوع الفعالية والحضور؛ اذكر التاريخ والمدينة إن أمكن.',
+        quantityPricing: null,
+      },
+      {
+        id: 'consulting',
+        labelAr: 'استشارة أو خدمة مخصّصة',
+        pricingHintAr: 'يُقتَرح عرض سعر أو جلسة بعد مراجعة الطلب من الفريق.',
+        quantityPricing: null,
+      },
+      {
+        id: 'followers_pack',
+        labelAr: 'المتابعات (Followers) — إنستغرام',
+        pricingHintAr:
+          'جدول المنصة: سعر الألف 1.85 ر.س؛ الحد 20–500,000؛ نقاط مقترحة ⌈كمية÷2⌉؛ مدة تنفيذ تقريبية 1–24 ساعة.',
+        quantityPricing: IG_QP(1.85, 20, 500000, 'تقريبًا 1 - 24 ساعة'),
+      },
+      {
+        id: 'likes_pack',
+        labelAr: 'الإعجابات (Likes) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 1.85 ر.س؛ الحد 20–100,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 5 دقائق–3 ساعات.',
+        quantityPricing: IG_QP(1.85, 20, 100000, 'تقريبًا 5 دقائق - 3 ساعات'),
+      },
+      {
+        id: 'comments_pack',
+        labelAr: 'التعليقات (Comments) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 4.50 ر.س؛ الحد 5–10,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 1–12 ساعة.',
+        quantityPricing: IG_QP(4.5, 5, 10000, 'تقريبًا 1 - 12 ساعة'),
+      },
+      {
+        id: 'mentions_pack',
+        labelAr: 'المنشن (Mentions) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 9.38 ر.س؛ الحد 100–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: IG_QP(9.38, 100, 50000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'views_pack',
+        labelAr: 'المشاهدات (Views) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 0.19 ر.س؛ الحد 100–10,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: IG_QP(0.19, 100, 10000000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      {
+        id: 'tw_followers_premium',
+        labelAr: 'متابعين تويتر',
+        pricingHintAr:
+          'جدول تويتر/إكس: سعر الألف 79 ر.س؛ الحد 100–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 24–72 ساعة.',
+        quantityPricing: TW_QP(79, 100, 50000, 'تقريبًا 24 - 72 ساعة'),
+      },
+      {
+        id: 'tw_followers_global',
+        labelAr: 'متابعين (عالمي) — تويتر',
+        pricingHintAr:
+          'سعر الألف 15 ر.س؛ الحد 100–200,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: TW_QP(15, 100, 200000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'tw_retweet',
+        labelAr: 'رتويت (Retweet) — تويتر',
+        pricingHintAr:
+          'سعر الألف 35 ر.س؛ الحد 50–20,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 1–6 ساعات.',
+        quantityPricing: TW_QP(35, 50, 20000, 'تقريبًا 1 - 6 ساعات'),
+      },
+      {
+        id: 'tw_likes',
+        labelAr: 'لايكات (Likes) — تويتر',
+        pricingHintAr:
+          'سعر الألف 19 ر.س؛ الحد 50–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 30 دقيقة–3 ساعات.',
+        quantityPricing: TW_QP(19, 50, 50000, 'تقريبًا 30 دقيقة - 3 ساعات'),
+      },
+      {
+        id: 'tw_views',
+        labelAr: 'المشاهدات (Views) — تويتر',
+        pricingHintAr:
+          'سعر الألف 0.99 ر.س؛ الحد 1,000–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: TW_QP(0.99, 1000, 1000000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      {
+        id: 'tt_followers',
+        labelAr: 'المتابعات (Followers) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 3.38 ر.س؛ الحد 100–2,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: TT_QP(3.38, 100, 2000000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'tt_likes',
+        labelAr: 'إعجابات الفيديو (Likes) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 1.15 ر.س؛ الحد 50–500,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 30 دقيقة–6 ساعات.',
+        quantityPricing: TT_QP(1.15, 50, 500000, 'تقريبًا 30 دقيقة - 6 ساعات'),
+      },
+      {
+        id: 'tt_views',
+        labelAr: 'المشاهدات (Views) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.04 ر.س؛ الحد 500–100,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري (دقائق).',
+        quantityPricing: TT_QP(0.04, 500, 100000000, 'تقريبًا فوري (دقائق)'),
+      },
+      {
+        id: 'tt_comments',
+        labelAr: 'التعليقات (Comments) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 5.60 ر.س؛ الحد 5–20,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 2–12 ساعة.',
+        quantityPricing: TT_QP(5.6, 5, 20000, 'تقريبًا 2 - 12 ساعة'),
+      },
+      {
+        id: 'tt_shares',
+        labelAr: 'المشاركة (Shares) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.35 ر.س؛ الحد 100–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعتان.',
+        quantityPricing: TT_QP(0.35, 100, 1000000, 'تقريبًا فوري - ساعتان'),
+      },
+      {
+        id: 'tt_saves',
+        labelAr: 'حفظ الفيديو (Saves) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.30 ر.س؛ الحد 100–500,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: TT_QP(0.3, 100, 500000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      {
+        id: 'snap_followers_world',
+        labelAr: 'متابعين (عالمي) — سناب شات',
+        pricingHintAr:
+          'جدول سناب شات: سعر الألف 25 ر.س؛ الحد 100–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 2–5 أيام.',
+        quantityPricing: SN_QP(25, 100, 50000, 'تقريبًا 2 - 5 أيام'),
+      },
+      {
+        id: 'snap_followers_gulf',
+        labelAr: 'متابعين (خليجي/سعودي) — سناب شات',
+        pricingHintAr:
+          'سعر الألف 120 ر.س؛ الحد 100–10,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 3–7 أيام.',
+        quantityPricing: SN_QP(120, 100, 10000, 'تقريبًا 3 - 7 أيام'),
+      },
+      {
+        id: 'snap_story_views',
+        labelAr: 'مشاهدات ستوري (Story) — سناب شات',
+        pricingHintAr:
+          'سعر الألف 15 ر.س؛ الحد 500–100,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 1–12 ساعة.',
+        quantityPricing: SN_QP(15, 500, 100000, 'تقريبًا 1 - 12 ساعة'),
+      },
+      {
+        id: 'snap_spotlight_views',
+        labelAr: 'مشاهدات منصة الأضواء (Spotlight) — سناب شات',
+        pricingHintAr:
+          'سعر الألف 3.50 ر.س؛ الحد 1,000–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعتان.',
+        quantityPricing: SN_QP(3.5, 1000, 1000000, 'تقريبًا فوري - ساعتان'),
+      },
+      {
+        id: 'snap_screenshots',
+        labelAr: 'سكرين شوت — سناب شات',
+        pricingHintAr:
+          'سعر الألف 18.75 ر.س؛ الحد 10–5,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 6–24 ساعة.',
+        quantityPricing: SN_QP(18.75, 10, 5000, 'تقريبًا 6 - 24 ساعة'),
+      },
+      {
+        id: 'snap_score_boost',
+        labelAr: 'رفع سكور الحساب — سناب شات',
+        pricingHintAr:
+          'سعر الألف 37.50 ر.س؛ الحد 1,000–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة التنفيذ تقريبًا حسب الكمية.',
+        quantityPricing: SN_QP(37.5, 1000, 1000000, 'تقريبًا حسب الكمية'),
+      },
+      { id: 'other', labelAr: 'أخرى (اذكرها في النص)', pricingHintAr: '', quantityPricing: null },
+    ];
+
+    let portalSvcOptionsCache = [];
+
+    /** أيقونة داخل المربع الملوّن لكل منصة — بدون أسماء تجارية في النص، أشكال تقريبية */
+    function portalPlatformIconInner(platformId) {
+      switch (platformId) {
+        case 'instagram':
+          return '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="#fff" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="3.35"/><circle cx="17.4" cy="6.6" r="0.95" fill="#fff" stroke="none"/></svg>';
+        case 'twitter':
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="#fff"><path d="M14.23 4h3.23l-7.07 8.08L18 20h-5.95l-4.65-5.88L5.2 20H2l7.56-8.62L2 4h6.1l4.2 5.18L14.23 4z"/></svg>';
+        case 'youtube':
+          return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M21.8 8s-.2-1.7-1-2.4c-.9-1-1.9-1-2.4-1.2C17 4 12 4 12 4s-5 0-6.4.4c-.5.2-1.5.2-2.4 1.2-.8.7-1 2.4-1 2.4S2 10 2 12v0s0 2 .2 3 .6 2.4 1.3 3c.9 1 2 1 2.5 1.2 1.8.4 7.3.4 7.3.4s5 0 6.4-.4c.5-.2 1.5-.2 2.4-1.2.7-.7 1.1-1.8 1.3-3 .2-1 .2-3 .2-3v0s0-2-.2-3-.5-2.3-1.3-3zm-9.8 6V10l5 2-5 2z"/></svg>';
+        case 'snapchat':
+          return '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="#000" d="M12.03 2C9.33 2 7.7 4.2 7.7 7v1.3c-1.95.55-3.25 2.15-3.6 3.9-.25 1.35.55 2.55 1.75 3.05.15.85.85 1.45 1.7 1.45h.35c.35 1.15 1.75 2 3.15 2 1.35 0 2.75-.85 3.1-2h.35c.85 0 1.55-.6 1.7-1.45 1.2-.5 2-1.7 1.75-3.05-.35-1.75-1.65-3.35-3.6-3.9V7c0-2.8-1.65-5-3.95-5H12z"/></svg>';
+        case 'tiktok':
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.69v-.74h-3.27v16.26c0 1.61-1.31 2.92-2.92 2.92s-2.92-1.31-2.92-2.92 1.31-2.92 2.92-2.92c.31 0 .61.05.89.14v-3.34a6.23 6.23 0 00-.89-.06c-3.42 0-6.19 2.77-6.19 6.19S8.26 22 11.68 22s6.19-2.77 6.19-6.19V9.66a8.36 8.36 0 004.72 1.45V7.88a4.87 4.87 0 01-3-.82z"/></svg>';
+        default:
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
+      }
+    }
+
+    function portalPlatformIconModifier(groupId) {
+      const styled = ['instagram', 'twitter', 'youtube', 'snapchat', 'tiktok', 'general'];
+      return styled.includes(groupId) ? groupId : 'general';
+    }
+
+    function renderPortalSvcOpts(opts) {
+      const host = document.getElementById('portalSvcOptionsHost');
+      if (!host) return;
+      portalSvcOptionsCache = Array.isArray(opts) && opts.length ? opts : FALLBACK_SVC_OPTIONS;
+
+      const GROUP_ORDER = ['instagram', 'twitter', 'youtube', 'snapchat', 'tiktok', 'general'];
+      const GROUP_LABEL_FALLBACK = {
+        instagram: 'إنستغرام',
+        twitter: 'إكس (تويتر)',
+        youtube: 'يوتيوب',
+        snapchat: 'سناب شات',
+        tiktok: 'تيك توك',
+        general: 'خدمات عامة',
+      };
+
+      function platformGroupForOpt(o) {
+        const g = String(o.platformGroup || '').trim();
+        if (g) return g;
+        const p = o.quantityPricing && o.quantityPricing.platform;
+        if (p) return p;
+        const id = String(o.id || '');
+        if (id.startsWith('tw_')) return 'twitter';
+        if (id.startsWith('tt_')) return 'tiktok';
+        if (id.startsWith('snap_')) return 'snapchat';
+        if (id.startsWith('ig_')) return 'instagram';
+        if (/followers_pack|likes_pack|comments_pack|mentions_pack|views_pack/.test(id)) return 'instagram';
+        return 'general';
+      }
+
+      function renderOneOpt(o) {
+        const hint = String(o.pricingHintAr || '').trim();
+        const hintHtml = hint ? `<small class="portal-svc-opt-hint">${escapeHtml(hint)}</small>` : '';
+        const qp = o.quantityPricing;
+        let qtyHtml = '';
+        if (qp) {
+          qtyHtml = `
+        <div class="portal-svc-qty-row" hidden data-qty-for="${escapeHtml(o.id)}">
+          <span class="portal-svc-qty-label">الكمية (${escapeHtml(qp.platformLabelAr || qp.platform || '')})</span>
+          <input type="number" class="portal-svc-qty-input" min="${qp.minQty}" max="${qp.maxQty}" step="1" inputmode="numeric" data-portal-svc-qty="${escapeHtml(o.id)}" placeholder="${qp.minQty}–${qp.maxQty}" dir="ltr" />
+          <span class="portal-svc-qty-est mono" data-portal-svc-est="${escapeHtml(o.id)}"></span>
+        </div>`;
+        }
+        return `<label class="portal-svc-opt" data-opt="${escapeHtml(o.id)}"><input type="checkbox" name="portalSvcChk" value="${escapeHtml(o.id)}" /><span class="portal-svc-opt-body"><span class="portal-svc-opt-title">${escapeHtml(o.labelAr)}</span>${hintHtml}${qtyHtml}</span></label>`;
+      }
+
+      const byGroup = new Map();
+      portalSvcOptionsCache.forEach((o) => {
+        const g = platformGroupForOpt(o);
+        if (!byGroup.has(g)) byGroup.set(g, []);
+        byGroup.get(g).push(o);
+      });
+
+      const keysWithItems = [...byGroup.keys()].filter((k) => (byGroup.get(k) || []).length);
+      keysWithItems.sort((a, b) => {
+        const ia = GROUP_ORDER.indexOf(a);
+        const ib = GROUP_ORDER.indexOf(b);
+        if (ia === -1 && ib === -1) return String(a).localeCompare(String(b));
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
+      let html = '';
+      let platIdx = 0;
+      for (const groupId of keysWithItems) {
+        const list = byGroup.get(groupId);
+        platIdx += 1;
+        const btnId = `portalSvcPlatBtn_${platIdx}`;
+        const bodyId = `portalSvcPlatBody_${platIdx}`;
+        const titleAr =
+          String((list[0] && list[0].platformGroupLabelAr) || '').trim() ||
+          GROUP_LABEL_FALLBACK[groupId] ||
+          groupId;
+        const mod = portalPlatformIconModifier(groupId);
+        const iconInner = portalPlatformIconInner(groupId);
+        html += `
+      <section class="portal-svc-platform" data-platform="${escapeHtml(groupId)}" aria-label="${escapeHtml(titleAr)}">
+        <button type="button" class="portal-svc-platform-head portal-svc-platform-toggle" id="${btnId}" aria-expanded="false" aria-controls="${bodyId}">
+          <span class="portal-svc-platform-icon portal-svc-platform-icon--${escapeHtml(mod)}" aria-hidden="true">${iconInner}</span>
+          <span class="portal-svc-platform-title">${escapeHtml(titleAr)}</span>
+          <span class="portal-svc-platform-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="portal-svc-platform-body" id="${bodyId}" role="region" aria-labelledby="${btnId}" hidden>
+          ${list.map(renderOneOpt).join('')}
+        </div>
+      </section>`;
+      }
+
+      host.innerHTML = html;
+      wirePortalSvcPlatformAccordion();
+      wirePortalSvcQtyInteractions();
+      syncPortalSvcQtyVisibility();
+      updatePortalSvcPricingTotals();
+    }
+
+    function wirePortalSvcPlatformAccordion() {
+      const host = document.getElementById('portalSvcOptionsHost');
+      if (!host || host.dataset.acc === '1') return;
+      host.dataset.acc = '1';
+      host.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('.portal-svc-platform-toggle');
+        if (!btn || !host.contains(btn)) return;
+        ev.preventDefault();
+        const sec = btn.closest('.portal-svc-platform');
+        const body = sec?.querySelector('.portal-svc-platform-body');
+        if (!body) return;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        body.hidden = isOpen;
+      });
+    }
+
+    function wirePortalSvcQtyInteractions() {
+      const host = document.getElementById('portalSvcOptionsHost');
+      if (!host || host.dataset.wired === '1') return;
+      host.dataset.wired = '1';
+      host.addEventListener('change', (ev) => {
+        if (ev.target.matches('input[name="portalSvcChk"]')) {
+          syncPortalSvcQtyVisibility();
+          updatePortalSvcPricingTotals();
+        }
+      });
+      host.addEventListener('input', (ev) => {
+        if (ev.target.matches('.portal-svc-qty-input')) updatePortalSvcPricingTotals();
+      });
+    }
+
+    function syncPortalSvcQtyVisibility() {
+      document.querySelectorAll('#portalSvcOptionsHost .portal-svc-opt').forEach((lab) => {
+        const cb = lab.querySelector('input[name="portalSvcChk"]');
+        const row = lab.querySelector('.portal-svc-qty-row');
+        if (!cb || !row) return;
+        row.hidden = !cb.checked;
+        if (!cb.checked) {
+          const inp = row.querySelector('.portal-svc-qty-input');
+          const est = row.querySelector('.portal-svc-qty-est');
+          if (inp) inp.value = '';
+          if (est) est.textContent = '';
+        }
+      });
+    }
+
+    function updatePortalSvcPricingTotals() {
+      const panel = document.getElementById('portalSvcPricingTotals');
+      if (!panel || !window.instagramQtyEstimate) return;
+      let totalSar = 0;
+      let totalPts = 0;
+      let nLines = 0;
+      document.querySelectorAll('#portalSvcOptionsHost input[name="portalSvcChk"]:checked').forEach((cb) => {
+        const id = cb.value;
+        const opt = portalSvcOptionsCache.find((x) => x.id === id);
+        const qp = opt?.quantityPricing;
+        if (!qp) return;
+        const lab = cb.closest('.portal-svc-opt');
+        const inp = lab.querySelector(`input.portal-svc-qty-input[data-portal-svc-qty="${id}"]`);
+        const estEl = lab.querySelector(`span.portal-svc-qty-est[data-portal-svc-est="${id}"]`);
+        const raw = inp?.value;
+        if (!raw || !String(raw).trim()) {
+          if (estEl) estEl.textContent = '';
+          return;
+        }
+        const r = window.instagramQtyEstimate.compute(qp, raw);
+        if (!r.ok) {
+          if (estEl) estEl.textContent = r.errorAr || '—';
+          return;
+        }
+        if (estEl) estEl.textContent = `≈ ${r.priceSar} ر.س · ${r.pointsRequired} نقطة`;
+        totalSar += r.priceSar;
+        totalPts += r.pointsRequired;
+        nLines += 1;
+      });
+      totalSar = Math.round(totalSar * 100) / 100;
+      if (nLines === 0) {
+        panel.hidden = true;
+        panel.textContent = '';
+        return;
+      }
+      panel.hidden = false;
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">(لا يُخصم تلقائياً)</span>`;
+    }
+
+    function showPortalSvcFlash(ok, msg) {
+      const el = document.getElementById('portalSvcFlash');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        el.textContent = '';
+        el.className = '';
+        return;
+      }
+      el.style.display = 'block';
+      el.className = 'flash ' + (ok ? 'ok' : 'err');
+      el.textContent = msg;
+    }
+
+    async function loadPortalSvcOptions() {
+      if (!document.getElementById('portalSvcOptionsHost')) return;
+      try {
+        const r = await fetch('/api/public/service-request-options', {
+          cache: 'no-store',
+          headers: { Accept: 'application/json' },
+        });
+        const data = await r.json().catch(() => ({}));
+        renderPortalSvcOpts(data.serviceOptions);
+      } catch {
+        renderPortalSvcOpts(null);
+      }
+    }
+
+    function showPartFlash(ok, msg) {
+      const el = document.getElementById('partFlash');
+      if (!el) return;
+      if (!msg) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+      }
+      el.style.display = 'block';
+      el.className = 'flash ' + (ok ? 'ok' : 'err');
+      el.textContent = msg;
+    }
+
+    async function loadParticipationCampaigns() {
+      const sel = document.getElementById('partCampSelect');
+      const detail = document.getElementById('partCampDetail');
+      showPartFlash(false, '');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">جاري التحميل…</option>';
+      if (detail) detail.innerHTML = '';
+      try {
+        const r = await fetch(portalApiUrl('/api/portal/campaigns-for-participation'), {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          sel.innerHTML = '<option value="">تعذّر تحميل الحملات</option>';
+          return;
+        }
+        portalParticipationCampaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+        const defaultPts =
+          data.defaultPointsPerInteraction != null ? String(data.defaultPointsPerInteraction) : '';
+        participationPtsHint = defaultPts
+          ? `لكل حملة عدد نقاط خاص عند التسجيل (انظر التفاصيل بعد اختيار الحملة). إن لم يُحدَّد للحملة شيء، يُستخدم افتراض المنصة <strong>+${escapeHtml(defaultPts)}</strong> نقطة.`
+          : '';
+        if (!portalParticipationCampaigns.length) {
+          sel.innerHTML = '<option value="">لا توجد حملات متاحة للتسجيل حالياً</option>';
+          if (detail) {
+            detail.innerHTML = defaultPts
+              ? `عند فتح حملات جديدة يمكنك اختيار إحداها أدناه؛ ستُعرض نقاط كل حملة في التفاصيل (الافتراضي للمنصة عادة +${escapeHtml(defaultPts)} عندما لا يُخصَّص للحملة رقم).`
+              : '';
+          }
+          return;
+        }
+        sel.innerHTML =
+          `<option value="">${escapeHtml(campEmptyLabel())}</option>` +
+          portalParticipationCampaigns
+            .map((c) => {
+              const tag = c.recommended ? ' — ★ مناسبة لك' : '';
+              return `<option value="${escapeHtml(c.id)}">${escapeHtml(c.title || c.id)}${tag}</option>`;
+            })
+            .join('');
+        if (detail) detail.innerHTML = participationPtsHint;
+      } catch {
+        sel.innerHTML = '<option value="">تعذّر الاتصال بالخادم</option>';
+      }
+    }
+
+    function updateParticipateDetail() {
+      const sel = document.getElementById('partCampSelect');
+      const detail = document.getElementById('partCampDetail');
+      if (!sel || !detail) return;
+      const id = sel.value;
+      const c = portalParticipationCampaigns.find((x) => x.id === id);
+      if (!c) {
+        detail.innerHTML = participationPtsHint;
+        const ub = document.getElementById('btnPortalVerifyParticipationLink');
+        if (ub) ub.style.display = 'none';
+        setVerifyCodeLabelLocked(false);
+        return;
+      }
+      const locked = !!c.participationLinkLocked;
+      const cachedUnlock = locked ? getParticipationUnlockedUrl(c.id) : '';
+      const serverOpen = !locked ? String(c.participationUrl || '').trim() : '';
+      const rawLink = String(c.link || '').trim();
+      const fallbackHttps =
+        !locked && /^https?:\/\//i.test(rawLink) ? rawLink : '';
+      const url = (locked ? cachedUnlock : serverOpen) || fallbackHttps;
+
+      setVerifyCodeLabelLocked(locked);
+
+      const unlockBtn = document.getElementById('btnPortalVerifyParticipationLink');
+      if (unlockBtn) {
+        unlockBtn.style.display = locked && !url ? 'inline-block' : 'none';
+      }
+
+      const hint = String(c.targetSubscriberHint || '').trim();
+      const hintPart =
+        hint && url
+          ? `<div style="margin-top:0.35rem;font-size:0.82rem;color:var(--muted)"><strong>المستهدَف:</strong> ${escapeHtml(hint)}</div>`
+          : '';
+      const btnLabel = String(c.participationOpenLabelAr || '').trim() || 'فتح وجهة الحملة';
+      const returnHint =
+        String(c.participationReturnHintAr || '').trim() ||
+        'أكمل ما تطلبه الحملة على الوجهة، ثم عد إلى هذه الصفحة وسجِّل مشاركتك بالزر أدناه.';
+      const manualNote = String(c.participationManualNoteAr || '').trim();
+      const manualPart = manualNote
+        ? `<div style="font-size:0.76rem;color:var(--muted);margin-top:0.45rem;line-height:1.5;padding:0.45rem 0.55rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--border)">${escapeHtml(manualNote)}</div>`
+        : '';
+      let linkPart;
+      if (url) {
+        linkPart = `<div style="margin-top:0.65rem">${hintPart}<a class="part-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(btnLabel)}</a><div style="font-size:0.76rem;color:var(--muted);margin-top:0.4rem;line-height:1.45">${escapeHtml(returnHint)}</div>${manualPart}</div>`;
+      } else if (locked) {
+        linkPart = `<div style="margin-top:0.65rem;padding:0.65rem 0.75rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);font-size:0.82rem;color:var(--muted);line-height:1.55"><strong>رابط التفاعل مخفي:</strong> صدر لك كود تحقق من الفريق لهذه الحملة. أدخل الكود في الحقل أعلاه ثم اضغط «تحقق من الكود وفتح رابط التفاعل» لعرض الرابط والانتقال من حسابك على المنصة.</div>`;
+      } else {
+        linkPart = `<div style="margin-top:0.65rem;font-size:0.8rem;color:var(--muted);line-height:1.45">لا يتوفر رابط يبدأ بـ <code dir="ltr">https://</code> أو حساب مستهدَف لعرض الوجهة. تواصل مع المنصة أو اختر حملة أخرى — يجب أن يوفّر منشئ الحملة رابط المنشور أو الموقع أو المتجر، أو معرّف مشترك لمتابعة حسابه.</div>`;
+      }
+      detail.innerHTML =
+        `<div><strong>النقاط عند تسجيل مشاركتك:</strong> +${escapeHtml(String(c.pointsAwarded != null ? c.pointsAwarded : '—'))}</div>` +
+        `<div><strong>نوع التفاعل:</strong> ${escapeHtml(c.typeAr || '')}</div>` +
+        `<div><strong>الوجهة:</strong> ${escapeHtml(c.destinationKindAr || '')}` +
+        (c.destinationLabel ? ` — ${escapeHtml(c.destinationLabel)}` : '') +
+        `</div>` +
+        (c.city ? `<div><strong>مدينة الحملة:</strong> ${escapeHtml(c.city)}</div>` : '') +
+        (c.interest ? `<div><strong>مجال الحملة:</strong> ${escapeHtml(c.interest)}</div>` : '') +
+        `<div><strong>التقدم:</strong> ${escapeHtml(c.progressLabel || '')}</div>` +
+        `<div style="font-size:0.78rem;margin-top:0.35rem;color:var(--muted)">${escapeHtml(c.billingHintAr || '')}</div>` +
+        linkPart;
+    }
+
+    async function fetchAndPaintPortalSummary() {
+      const gateErrFetchEl = document.getElementById('gateErrFetch');
+      try {
+        const r = await fetch(portalApiUrl('/api/portal/summary'), {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          if (r.status === 400 || r.status === 404) {
+            window.location.replace('/subscriber-login');
+            return;
+          }
+          if (gateErrFetchEl) {
+            gateErrFetchEl.style.display = 'block';
+            gateErrFetchEl.textContent =
+              (data.error || 'تعذّر تحميل البيانات.') +
+              ' إن انتهت صلاحية الرابط أعد الدخول من صفحة «دخول حسابي».';
+          }
+          return;
+        }
+        if (gateErrFetchEl) gateErrFetchEl.style.display = 'none';
+        document.getElementById('mainPanels').style.display = 'block';
+        closePortalAccountDetail();
+        const p = data.profile || {};
+        const pnHidden = document.getElementById('portalSvcPhoneNorm');
+        if (pnHidden) pnHidden.value = String(p.phoneNorm || '').trim();
+
+        document.getElementById('statPoints').textContent = String(data.points ?? 0);
+        document.getElementById('statPaid').textContent =
+          data.totalPaidSar != null ? Number(data.totalPaidSar).toLocaleString('ar-SA', { maximumFractionDigits: 2 }) : '0';
+        document.getElementById('statParticipations').textContent = String(data.interactionsTotal ?? 0);
+        const svcReq = Array.isArray(data.serviceRequests) ? data.serviceRequests : [];
+        document.getElementById('statRequests').textContent = String(svcReq.length);
+
+        const tbAct = document.getElementById('tbActivityLog');
+        const acts = Array.isArray(data.activityLog) ? data.activityLog : [];
+        tbAct.innerHTML = acts.length
+          ? acts
+              .map((row) => {
+                const pts = row.pointsDelta != null ? String(row.pointsDelta) : '—';
+                const amt =
+                  row.amountSar != null && row.amountSar !== ''
+                    ? Number(row.amountSar).toLocaleString('ar-SA', { maximumFractionDigits: 2 })
+                    : '—';
+                return `<tr>
+              <td>${escapeHtml(fmtDate(row.at))}</td>
+              <td style="white-space:nowrap;font-size:0.78rem">${escapeHtml(row.bucketAr || '')}</td>
+              <td><strong>${escapeHtml(row.headlineAr || '')}</strong><div style="font-size:0.78rem;color:var(--muted);margin-top:0.25rem;line-height:1.45">${escapeHtml(row.detailAr || '')}</div></td>
+              <td class="mono">${escapeHtml(pts)}</td>
+              <td class="mono">${escapeHtml(amt)}</td>
+            </tr>`;
+              })
+              .join('')
+          : '<tr><td colspan="5" style="color:var(--muted)">لا تحركات مسجّلة بعد</td></tr>';
+
+        document.getElementById('profileGrid').innerHTML = `
+            <div><strong>الاسم:</strong> ${escapeHtml(p.displayName || '—')}</div>
+            <div><strong>المدينة:</strong> ${escapeHtml(p.city || '—')}</div>
+            <div><strong>الجوال:</strong> ${escapeHtml(p.phoneMasked || '—')}</div>
+            <div><strong>المنصة:</strong> ${escapeHtml(p.socialPlatformLabel || '')} ${p.usernameOnPlatform ? `<span dir="ltr">${escapeHtml(p.usernameOnPlatform)}</span>` : ''}</div>
+            <div><strong>عضو منذ:</strong> ${fmtDate(p.memberSince)}</div>
+            ${(() => {
+              const svcLabs = Array.isArray(p.requestedServiceLabels) ? p.requestedServiceLabels : [];
+              const sn = (p.signupNotes || '').trim();
+              if (!svcLabs.length && !sn) return '';
+              return `
+            <div style="grid-column:1/-1;margin-top:0.35rem;padding-top:0.45rem;border-top:1px solid var(--border)"><strong>طلباتك عند التسجيل</strong></div>
+            ${svcLabs.length ? `<div><strong>نوع الخدمات:</strong> ${escapeHtml(svcLabs.join('، '))}</div>` : ''}
+            ${sn ? `<div style="white-space:pre-wrap"><strong>التفاصيل:</strong> ${escapeHtml(sn)}</div>` : ''}`;
+            })()}
+          `;
+
+        const tbI = document.getElementById('tbInteractions');
+        const ints = data.interactions || [];
+        tbI.innerHTML = ints.length
+          ? ints
+              .map(
+                (row) =>
+                  `<tr><td>${escapeHtml(row.campaignTitle)}</td><td>${escapeHtml(row.campaignTypeAr || row.campaignType || '')}</td><td style="font-size:0.76rem;color:var(--muted);max-width:12rem">${escapeHtml(row.campaignBillingHintAr || '')}</td><td>${escapeHtml(String(row.pointsEarned ?? ''))}</td><td>${escapeHtml(fmtDate(row.createdAt))}</td></tr>`
+              )
+              .join('')
+          : '<tr><td colspan="5" style="color:var(--muted)">لا مشاركات مسجّلة بعد</td></tr>';
+
+        const tbP = document.getElementById('tbPayments');
+        const pays = data.payments || [];
+        tbP.innerHTML = pays.length
+          ? pays
+              .map(
+                (row) =>
+                  `<tr><td class="mono">${escapeHtml(String(row.amountSar))}</td><td>${escapeHtml(row.label || '—')}</td><td>${escapeHtml(row.note || '—')}</td><td>${escapeHtml(fmtDate(row.createdAt))}</td></tr>`
+              )
+              .join('')
+          : '<tr><td colspan="4" style="color:var(--muted)">لا مدفوعات مسجّلة بعد</td></tr>';
+
+        await loadParticipationCampaigns();
+      } catch {
+        if (gateErrFetchEl) {
+          gateErrFetchEl.style.display = 'block';
+          gateErrFetchEl.textContent = 'تعذّر الاتصال بالخادم.';
+        }
+      }
+    }
+
+    (async function bootMyAccount() {
+      await applyPublicCopyFromJson('myAccount');
+      loadPortalSvcOptions();
+      fetchAndPaintPortalSummary();
+    })();
+
+    document.getElementById('partCampSelect').addEventListener('change', updateParticipateDetail);
+    document.getElementById('btnPortalVerifyParticipationLink').onclick = async () => {
+      showPartFlash(false, '');
+      const sel = document.getElementById('partCampSelect');
+      const cid = sel.value;
+      const verificationCode = document.getElementById('partVerifyCode').value.trim();
+      if (!cid) {
+        showPartFlash(false, 'اختر حملة أولاً.');
+        return;
+      }
+      if (!verificationCode) {
+        showPartFlash(false, 'أدخل كود التحقق.');
+        return;
+      }
+      const tok = qs('t');
+      const payload = { campaignId: cid, verificationCode };
+      if (tok && tok.length >= 24) payload.t = tok;
+      const unlockBtn = document.getElementById('btnPortalVerifyParticipationLink');
+      try {
+        if (unlockBtn) {
+          unlockBtn.disabled = true;
+          unlockBtn.textContent = 'جاري التحقق…';
+        }
+        const r = await fetch('/api/portal/verify-participation-code', {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          showPartFlash(false, data.error || 'تعذّر التحقق.');
+          return;
+        }
+        const u = String(data.participationUrl || '').trim();
+        if (!u) {
+          showPartFlash(false, 'لم يُرجِع الخادم رابطاً صالحاً.');
+          return;
+        }
+        setParticipationUnlockedUrl(cid, u);
+        showPartFlash(true, 'تم التحقق — يمكنك فتح رابط التفاعل.');
+        updateParticipateDetail();
+      } catch {
+        showPartFlash(false, 'تعذّر الاتصال بالخادم.');
+      } finally {
+        if (unlockBtn) {
+          unlockBtn.disabled = false;
+          unlockBtn.textContent = 'تحقق من الكود وفتح رابط التفاعل';
+        }
+      }
+    };
+    document.getElementById('btnPortalRegisterInteraction').onclick = async () => {
+      showPartFlash(false, '');
+      const sel = document.getElementById('partCampSelect');
+      const cid = sel.value;
+      if (!cid) {
+        showPartFlash(false, 'اختر حملة من القائمة.');
+        return;
+      }
+      const verificationCode = document.getElementById('partVerifyCode').value.trim();
+      const tok = qs('t');
+      const payload = { campaignId: cid, verificationCode };
+      if (tok && tok.length >= 24) payload.t = tok;
+      try {
+        const r = await fetch('/api/portal/register-interaction', {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          showPartFlash(false, data.error || 'تعذّر التسجيل.');
+          return;
+        }
+        showPartFlash(true, data.message || 'تم التسجيل.');
+        document.getElementById('partVerifyCode').value = '';
+        await fetchAndPaintPortalSummary();
+        updateParticipateDetail();
+      } catch {
+        showPartFlash(false, 'تعذّر الاتصال بالخادم.');
+      }
+    };
+
+    document.getElementById('portalSvcForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      showPortalSvcFlash(false, '');
+      const btn = document.getElementById('btnPortalSvcSubmit');
+      const requestKind = document.getElementById('portalSvcKind').value;
+      const title = document.getElementById('portalSvcTitle').value.trim();
+      const details = document.getElementById('portalSvcDetails').value.trim();
+      const name = document.getElementById('portalSvcName').value.trim();
+      const phoneNorm = document.getElementById('portalSvcPhoneNorm').value.trim();
+      const requestedServices = [
+        ...document.querySelectorAll('#portalSvcForm input[name="portalSvcChk"]:checked'),
+      ].map((c) => c.value);
+
+      for (const cb of document.querySelectorAll('#portalSvcForm input[name="portalSvcChk"]:checked')) {
+        const opt = portalSvcOptionsCache.find((x) => x.id === cb.value);
+        if (!opt?.quantityPricing) continue;
+        const lab = cb.closest('.portal-svc-opt');
+        const inp = lab?.querySelector('.portal-svc-qty-input');
+        const v = inp?.value?.trim();
+        if (!v) {
+          showPortalSvcFlash(false, `أدخل الكمية لخدمة «${opt.labelAr}» وفق جدول الكمية للمنصة (إنستغرام أو تويتر).`);
+          return;
+        }
+      }
+
+      const serviceQuantities = {};
+      document.querySelectorAll('#portalSvcForm input[name="portalSvcChk"]:checked').forEach((cb) => {
+        const opt = portalSvcOptionsCache.find((x) => x.id === cb.value);
+        if (!opt?.quantityPricing) return;
+        const lab = cb.closest('.portal-svc-opt');
+        const inp = lab?.querySelector('.portal-svc-qty-input');
+        const v = inp?.value?.trim();
+        if (v) serviceQuantities[cb.value] = Math.floor(Number(v));
+      });
+
+      const payload = { requestKind, title, details, requestedServices, serviceQuantities };
+      if (name) payload.name = name;
+      if (phoneNorm) payload.phone = phoneNorm;
+      const tok = qs('t');
+      if (tok && tok.length >= 24) {
+        payload.portalLink = `${window.location.origin}/my-account?t=${encodeURIComponent(tok)}`;
+      }
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'جاري الإرسال…';
+      }
+      try {
+        const r = await fetch('/api/client/service-requests', {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          showPortalSvcFlash(false, data.error || data.message || 'تعذّر الإرسال');
+          return;
+        }
+        showPortalSvcFlash(true, 'تم استلام طلبك وسيظهر في سجل التحركات.');
+        document.getElementById('portalSvcTitle').value = '';
+        document.getElementById('portalSvcDetails').value = '';
+        document.querySelectorAll('#portalSvcForm input[name="portalSvcChk"]').forEach((c) => {
+          c.checked = false;
+        });
+        syncPortalSvcQtyVisibility();
+        updatePortalSvcPricingTotals();
+        await fetchAndPaintPortalSummary();
+      } catch {
+        showPortalSvcFlash(false, 'تعذّر الاتصال بالخادم.');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'إرسال الطلب من حسابي';
+        }
+      }
+    });
+  </script>
+  <script src="/js/global-site-banner.js" defer></script>
+</body>
+</html>

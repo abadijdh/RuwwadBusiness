@@ -1,0 +1,4 @@
+{
+  "watch": ["server.js", "public"],
+  "delay": "400ms"
+}

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-public-copy-page="subscriberLogin">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <link rel="stylesheet" href="/css/public-customer-nav.css" />
+  <title>RuwwadBusiness — دخول المشترك — حسابي</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #0f0f12;
+      --elevated: #14141a;
+      --border: rgba(255, 255, 255, 0.075);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --accent-dim: #db2777;
+      --accent-glow: rgba(236, 72, 153, 0.22);
+      --gold: #fbcfe8;
+      --ok: #34d399;
+      --err: #fb7185;
+      --input-bg: #0c0c10;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Tajawal", "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(1200px 520px at 15% -10%, rgba(236, 72, 153, 0.09), transparent 52%),
+                  radial-gradient(900px 480px at 90% 40%, rgba(236, 72, 153, 0.05), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    a { color: #f9a8d4; font-weight: 600; text-decoration: none; }
+    a:hover { color: #fbcfe8; text-decoration: underline; }
+    .wrap {
+      max-width: min(1200px, 96vw);
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2rem) 2.5rem;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.95rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(165deg, #12121a 0%, #0a0a0e 55%, rgba(8, 8, 9, 0.97) 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand span {
+      background: linear-gradient(135deg, #fbcfe8, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .brand-product-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-inline-start: 0.45rem;
+      vertical-align: middle;
+      unicode-bidi: isolate;
+    }
+    .hero-main { min-width: 0; }
+    .hero {
+      margin-top: clamp(1rem, 2.5vw, 1.5rem);
+      text-align: center;
+      padding: clamp(0.85rem, 2vw, 1.25rem) 0 clamp(0.75rem, 2vw, 1.1rem);
+    }
+    .hero h1 {
+      font-size: clamp(1.35rem, 2.5vw + 0.85rem, 1.85rem);
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+      line-height: 1.28;
+    }
+    .hero-side {
+      display: none;
+      border-radius: calc(var(--radius) + 6px);
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.14) 0%, rgba(20, 20, 26, 0.92) 42%, var(--elevated) 100%);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      min-height: 10rem;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 900px) {
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.12fr) minmax(200px, 320px);
+        gap: clamp(1rem, 2.5vw, 2rem);
+        align-items: center;
+        text-align: right;
+      }
+      .hero-side { display: block; }
+    }
+    .hero-side::after {
+      content: "";
+      position: absolute;
+      inset: -40% -20%;
+      background: radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.25), transparent 55%);
+      pointer-events: none;
+    }
+    @media (min-width: 900px) {
+      .hero-main .reg-banner {
+        text-align: right;
+      }
+    }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.65rem; line-height: 1.55; }
+    .portal-grid {
+      display: grid;
+      gap: clamp(1rem, 2vw, 1.35rem);
+      margin-top: 0.35rem;
+    }
+    @media (min-width: 920px) {
+      .portal-grid {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        align-items: stretch;
+      }
+      .portal-grid .otp-intro {
+        text-align: right;
+      }
+      .portal-alt-lead {
+        text-align: right;
+      }
+    }
+    .otp-intro {
+      margin-top: 0;
+      text-align: center;
+      line-height: 1.55;
+    }
+    .portal-alt-lead {
+      margin-top: 0;
+      margin-bottom: 0.65rem;
+      text-align: center;
+    }
+    .paste-card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      margin-top: 0;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.28);
+    }
+    .paste-card h3 {
+      font-size: 1rem;
+      color: var(--gold);
+      margin: 0 0 0.55rem;
+      font-weight: 700;
+    }
+    .paste-card label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .paste-card input {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.88rem;
+      margin-bottom: 0.65rem;
+      font-family: inherit;
+    }
+    .paste-card input:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.55);
+      box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.14);
+    }
+    .paste-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .paste-actions button { flex: 1 1 auto; min-width: min(100%, 10rem); }
+    @media (min-width: 920px) {
+      .paste-actions button { min-width: 0; flex: 0 1 auto; }
+    }
+    .paste-card button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    .paste-card button:hover { box-shadow: 0 8px 28px rgba(236, 72, 153, 0.32); }
+    .flash.err {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      display: none;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    .flash.err.show { display: block; }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
+    <span class="public-customer-nav" aria-label="روابط المشترك">
+      <a class="public-customer-nav__pill" href="/join">الاشتراك</a>
+      <span class="public-customer-nav__pill public-customer-nav__pill--current">دخول حسابي</span>
+      <a class="public-customer-nav__pill" href="/my-account">حسابي</a>
+    </span>
+  </nav>
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-main">
+        <h1 data-copy="heroTitle">دخول حسابي</h1>
+        <p class="hint subscriber-hero-lead" style="margin-top:0" data-copy-html="heroHint">هذه الصفحة للمشتركين فقط — نقاطك ومشاركاتك ومدفوعاتك كما في <strong>حسابي</strong>.</p>
+      </div>
+      <aside class="hero-side" aria-hidden="true">      </aside>
+    </header>
+
+    <div id="gateErr" class="flash err" role="alert"></div>
+
+    <div class="portal-grid">
+      <div class="paste-card">
+        <h3 data-copy="otpSectionTitle">الدخول برقم الجوال</h3>
+        <p class="hint otp-intro" data-copy-html="otpIntro">نفس الرقم الذي سجّلت به في <strong>صفحة الاشتراك</strong>. اطلب رمز التحقق ثم أدخله. لا تشارك الرمز مع أحد.</p>
+        <label for="portalPhone" data-copy="labelPhone">رقم الجوال</label>
+        <input id="portalPhone" type="tel" dir="ltr" style="text-align:left" data-copy-placeholder="placeholderPhone" placeholder="05xxxxxxxx أو 9665xxxxxxxx" autocomplete="tel" />
+        <div class="paste-actions">
+          <button type="button" id="btnPortalSendOtp" data-copy="btnSendOtp">إرسال رمز التحقق</button>
+        </div>
+        <label for="portalOtpCode" style="margin-top:0.65rem;display:block" data-copy="labelOtp">رمز التحقق (٦ أرقام)</label>
+        <input id="portalOtpCode" type="text" inputmode="numeric" maxlength="10" dir="ltr" style="text-align:left" data-copy-placeholder="placeholderOtp" placeholder="••••••" autocomplete="one-time-code" spellcheck="false" />
+        <div class="paste-actions" style="margin-top:0.35rem">
+          <button type="button" id="btnPortalVerifyOtp" data-copy="btnVerify">فتح حسابي</button>
+        </div>
+        <p id="portalDevHint" class="hint" style="display:none;margin-top:0.65rem;color:#8cf5c3;font-family:ui-monospace,monospace" dir="ltr"></p>
+      </div>
+
+      <div class="portal-alt">
+        <p class="hint portal-alt-lead" data-copy-html="pasteSectionLead"><strong>أو</strong> الصق الرابط الخاص بحسابك إن أرسله لك الفريق</p>
+        <div class="paste-card">
+          <label for="pastePortal" data-copy-html="pasteLabel">رابط حسابي أو الرمز الطويل بعد <code dir="ltr">?t=</code></label>
+          <input id="pastePortal" type="text" dir="ltr" style="text-align:left" data-copy-placeholder="pastePlaceholder" placeholder="…/my-account?t= ثم حوالي ٦٤ حرفاً" autocomplete="off" spellcheck="false" />
+          <button type="button" id="btnOpenPortal" data-copy="btnPasteOpen">الدخول بالرابط</button>
+          <p class="hint" style="margin-top:0.65rem;margin-bottom:0" data-copy="pasteFooterHint">يمكن أن يزودك الفريق برابط أو رمز طويل عند الحاجة؛ بعد التسجيل الأول يكفي الجوال أعلاه.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer data-copy="footerText">RuwwadBusiness — المشترك فقط: بعد الدخول تنتقل إلى صفحة حسابي الكاملة.</footer>
+  </div>
+
+  <script src="/js/public-copy.js"></script>
+  <script>
+    function qs(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+    function showErr(msg) {
+      const el = document.getElementById('gateErr');
+      if (!msg) {
+        el.classList.remove('show');
+        el.textContent = '';
+        return;
+      }
+      el.textContent = msg;
+      el.classList.add('show');
+    }
+
+    function explainPasteFailure(raw) {
+      const oneLine = String(raw ?? '')
+        .trim()
+        .replace(/\s/g, '');
+      if (/^[a-f0-9]{24}$/i.test(oneLine)) {
+        return 'هذا يبدو معرّفاً داخلياً وليس رابط حسابي. استخدم الرابط الكامل أو ادخل برقم الجوال.';
+      }
+      return 'تعذّر قراءة الرابط. الصق العنوان كاملاً مع ?t= أو الرمز الطويل دون مسافات.';
+    }
+
+    function extractPortalToken(raw) {
+      const s = String(raw ?? '').trim();
+      if (!s) return null;
+      if (s.startsWith('?')) {
+        const sp = new URLSearchParams(s.slice(1));
+        const ttq = sp.get('t');
+        if (ttq && ttq.trim().length >= 24) return ttq.trim();
+      }
+      let u = null;
+      try {
+        u = new URL(s);
+      } catch {
+        try {
+          u = new URL(s, window.location.origin);
+        } catch {
+          u = null;
+        }
+      }
+      if (u) {
+        const tt = u.searchParams.get('t');
+        if (tt && tt.trim().length >= 24) return tt.trim();
+      }
+      const oneLine = s.replace(/\s/g, '');
+      if (/^[a-f0-9]{32,128}$/i.test(oneLine)) return oneLine;
+      return null;
+    }
+
+    (async function bootSubscriberLogin() {
+      await applyPublicCopyFromJson('subscriberLogin');
+
+      try {
+        const r = await fetch('/api/settings/subscriber-login', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok && data) {
+          const h1 = document.querySelector('.hero-main h1');
+          const lead = document.querySelector('.subscriber-hero-lead');
+          if (data.subscriberHeroTitle != null && String(data.subscriberHeroTitle).trim() !== '' && h1) {
+            h1.textContent = String(data.subscriberHeroTitle).trim();
+          }
+          if (data.subscriberHeroLeadHtml != null && String(data.subscriberHeroLeadHtml).trim() !== '' && lead) {
+            lead.innerHTML = String(data.subscriberHeroLeadHtml).trim();
+          }
+        }
+      } catch (_) {
+        /* يبقى النص من JSON */
+      }
+
+      const redir = qs('registered');
+      if (redir === '1') {
+        showErr('');
+        const hint = document.createElement('p');
+        hint.className = 'hint reg-banner';
+        hint.style.cssText = 'margin-top:0.75rem;color:#8cf5c3;font-weight:600';
+        const txt =
+          window.__PUBLIC_COPY__?.subscriberLogin?.registeredRedirectBanner ||
+          'تم التسجيل — أدخل جوالك أدناه لفتح حسابك.';
+        hint.textContent = txt;
+        const heroMain = document.querySelector('.hero-main');
+        (heroMain || document.querySelector('.hero')).appendChild(hint);
+      }
+
+      document.getElementById('btnPortalSendOtp').onclick = async () => {
+        showErr('');
+        document.getElementById('portalDevHint').style.display = 'none';
+        const phone = document.getElementById('portalPhone').value.trim();
+        if (!phone) {
+          showErr('أدخل رقم الجوال.');
+          return;
+        }
+        try {
+          const r = await fetch('/api/portal/login/send-code', {
+            method: 'POST',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ phone }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            showErr(data.error || 'تعذّر إرسال الرمز.');
+            return;
+          }
+          if (data.devCode) {
+            const dh = document.getElementById('portalDevHint');
+            dh.style.display = 'block';
+            dh.textContent = `رمز التطوير (DEV_OTP_HINT): ${data.devCode}`;
+          }
+        } catch {
+          showErr('تعذّر الاتصال بالخادم.');
+        }
+      };
+
+      document.getElementById('btnPortalVerifyOtp').onclick = async () => {
+        showErr('');
+        const phone = document.getElementById('portalPhone').value.trim();
+        const code = document.getElementById('portalOtpCode').value.trim().replace(/\D/g, '');
+        if (!phone || code.length !== 6) {
+          showErr('أدخل رقم الجوال والرمز المكوّن من ٦ أرقام.');
+          return;
+        }
+        try {
+          const r = await fetch('/api/portal/login/verify', {
+            method: 'POST',
+            cache: 'no-store',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ phone, code }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok || !data.portalToken) {
+            showErr(data.error || 'تعذّر التحقق من الرمز.');
+            return;
+          }
+          window.location.assign('/my-account');
+        } catch {
+          showErr('تعذّر الاتصال بالخادم.');
+        }
+      };
+
+      document.getElementById('btnOpenPortal').onclick = () => {
+        const tok = extractPortalToken(document.getElementById('pastePortal').value);
+        if (!tok) {
+          showErr(explainPasteFailure(document.getElementById('pastePortal').value));
+          return;
+        }
+        window.location.assign(`/my-account?t=${encodeURIComponent(tok)}`);
+      };
+    })();
+  </script>
+  <script src="/js/global-site-banner.js" defer></script>
+</body>
+</html>

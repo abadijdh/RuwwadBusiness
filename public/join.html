@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-public-copy-page="join">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <link rel="stylesheet" href="/css/public-customer-nav.css" />
+  <title>RuwwadBusiness — انضم إلى رواد الأعمال — اشتراك المشتركين</title>
+  <meta name="description" content="سجّل كمشترك من هذه الصفحة، ثم ادخل إلى حسابك من صفحة الدخول المخصّصة للمشتركين فقط." />
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #0f0f12;
+      --elevated: #14141a;
+      --border: rgba(255, 255, 255, 0.075);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --accent-dim: #db2777;
+      --accent-glow: rgba(236, 72, 153, 0.22);
+      --accent-soft: rgba(236, 72, 153, 0.14);
+      --gold: #fbcfe8;
+      --ok: #34d399;
+      --err: #fb7185;
+      --input-bg: #0c0c10;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Tajawal", "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(1200px 520px at 15% -10%, rgba(236, 72, 153, 0.09), transparent 52%),
+                  radial-gradient(900px 480px at 90% 40%, rgba(236, 72, 153, 0.05), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    a { color: #f9a8d4; font-weight: 600; text-decoration: none; }
+    a:hover { color: #fbcfe8; text-decoration: underline; }
+    .wrap {
+      max-width: min(1320px, 96vw);
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2rem) 2.5rem;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.95rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(165deg, #12121a 0%, #0a0a0e 55%, rgba(8, 8, 9, 0.97) 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-brand-row { display: flex; align-items: center; gap: 0.65rem; }
+    #joinSiteLogo {
+      display: none;
+      height: 40px;
+      max-width: 130px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand { font-weight: 800; font-size: 1.08rem; letter-spacing: -0.02em; }
+    .brand span {
+      background: linear-gradient(135deg, #fbcfe8, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .brand-product-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-inline-start: 0.45rem;
+      vertical-align: middle;
+      unicode-bidi: isolate;
+    }
+    .nav-muted { font-size: 0.84rem; color: var(--muted); font-weight: 600; }
+    .hero {
+      padding: clamp(1.75rem, 4vw, 2.25rem) 0 clamp(1.5rem, 3vw, 2rem);
+      text-align: center;
+    }
+    .hero-main {
+      min-width: 0;
+    }
+    @media (min-width: 1024px) {
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.12fr) minmax(220px, 360px);
+        gap: clamp(1.5rem, 3vw, 2.75rem);
+        align-items: center;
+        text-align: right;
+      }
+      .hero.hero--no-aside {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      .hero.hero--no-aside .hero-side {
+        display: none !important;
+      }
+      .hero .cta-row { justify-content: flex-start; }
+    }
+    .hero-side {
+      display: none;
+      border-radius: calc(var(--radius) + 6px);
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.14) 0%, rgba(20, 20, 26, 0.92) 42%, var(--elevated) 100%);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      min-height: 11rem;
+      position: relative;
+      overflow: hidden;
+    }
+    @media (min-width: 1024px) {
+      .hero-side {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 1.15rem;
+        box-sizing: border-box;
+      }
+    }
+    .hero-side::after {
+      content: "";
+      position: absolute;
+      inset: -40% -20%;
+      background: radial-gradient(circle at 30% 30%, rgba(236, 72, 153, 0.25), transparent 55%);
+      pointer-events: none;
+    }
+    .hero-side-inner {
+      position: relative;
+      z-index: 1;
+      flex: 1 1 auto;
+      align-self: stretch;
+      width: 100%;
+      min-height: 0;
+      margin: 0;
+      color: #fff;
+      font: inherit;
+      line-height: 1.55;
+      font-weight: 500;
+    }
+    .hero-side-inner a {
+      color: #fbcfe8;
+      font-weight: 600;
+    }
+    .hero-side-inner a:hover {
+      color: #fff;
+    }
+    .hero-side-inner p {
+      margin: 0 0 0.55rem;
+    }
+    .hero-side-inner p:last-child {
+      margin-bottom: 0;
+    }
+    .hero h1 {
+      font-size: clamp(1.65rem, 2.8vw + 1rem, 2.35rem);
+      font-weight: 800;
+      line-height: 1.28;
+      margin-bottom: 0.85rem;
+      max-width: none;
+      margin-inline: 0;
+      letter-spacing: -0.03em;
+    }
+    .hero-lead {
+      color: var(--muted);
+      font-size: clamp(1rem, 1.1vw + 0.85rem, 1.12rem);
+      max-width: 48rem;
+      margin-inline: 0;
+      margin-bottom: 1.35rem;
+      line-height: 1.65;
+    }
+    @media (max-width: 1023px) {
+      .hero-lead { margin-inline: auto; max-width: 36rem; }
+      .hero h1 { max-width: 22rem; margin-inline: auto; }
+    }
+    .cta-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 1.35rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 26px var(--accent-glow);
+    }
+    .btn-primary:hover { box-shadow: 0 8px 34px rgba(236, 72, 153, 0.38); }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); background: rgba(255, 255, 255, 0.07); }
+    section { margin-top: clamp(2rem, 4vw, 2.75rem); }
+    section h2 {
+      font-size: clamp(1.08rem, 1.2vw + 0.95rem, 1.28rem);
+      margin-bottom: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.85rem, 2vw, 1.25rem);
+    }
+    @media (max-width: 900px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.35rem;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.28);
+    }
+    .card h3 { font-size: 1.02rem; margin-bottom: 0.45rem; color: #fbcfe8; font-weight: 700; }
+    .card p,
+    .card .card-body { font-size: 0.9rem; color: var(--muted); }
+    .card .card-body { margin: 0; line-height: 1.55; }
+    .steps {
+      counter-reset: s;
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 860px) {
+      .steps {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .step {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: right;
+        min-height: 100%;
+      }
+      .step::before {
+        align-self: flex-start;
+      }
+    }
+    .step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+    }
+    .step::before {
+      counter-increment: s;
+      content: counter(s);
+      flex-shrink: 0;
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, rgba(236, 72, 153, 0.26), rgba(236, 72, 153, 0.07));
+      color: #fbcfe8;
+      border: 1px solid rgba(236, 72, 153, 0.38);
+      font-weight: 800;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .form-card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: clamp(1.25rem, 2.5vw, 1.55rem);
+      margin-top: 1rem;
+      box-shadow: 0 4px 26px rgba(0, 0, 0, 0.28);
+    }
+    .form-grid {
+      display: grid;
+      gap: 1rem 1.25rem;
+      margin-top: 1rem;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: start;
+    }
+    .form-grid .form-field--full {
+      grid-column: 1 / -1;
+    }
+    .form-grid .form-field--span2 {
+      grid-column: span 2;
+    }
+    @media (max-width: 900px) {
+      .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 520px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      .form-grid .form-field--span2 {
+        grid-column: span 1;
+      }
+    }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; }
+    input, select {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 5rem;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      line-height: 1.5;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.55);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    input:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.55);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    select.field-select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      padding-inline-end: 2.15rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%239898a6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 0.65rem) center;
+      background-size: 12px;
+    }
+    select.field-select:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.55);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    .hint-small { font-size: 0.78rem; color: var(--muted); margin-top: 0.85rem; line-height: 1.5; }
+    .flash {
+      margin-top: 0.85rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .flash.ok { display: block; background: rgba(52, 211, 153, 0.14); color: var(--ok); border: 1px solid rgba(52, 211, 153, 0.38); }
+    .flash.err { display: block; background: rgba(251, 113, 133, 0.14); color: var(--err); border: 1px solid rgba(251, 113, 133, 0.35); }
+    .success-panel {
+      display: none;
+      text-align: center;
+      padding: 2rem clamp(1rem, 3vw, 2rem);
+      border-radius: var(--radius);
+      border: 1px solid rgba(236, 72, 153, 0.35);
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.1) 0%, rgba(20, 20, 26, 0.95) 55%);
+      margin-top: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      max-width: 52rem;
+      margin-inline: auto;
+    }
+    .success-panel.visible { display: block; }
+    .success-panel h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-brand-row">
+      <img id="joinSiteLogo" alt="" />
+      <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
+    </div>
+    <span class="public-customer-nav nav-muted" aria-label="روابط العميل">
+      <span class="public-customer-nav__pill public-customer-nav__pill--current">الاشتراك</span>
+      <a class="public-customer-nav__pill" href="/subscriber-login" data-copy="navLoginLink">دخول حسابي (مشترك)</a>
+      <a class="public-customer-nav__pill" href="/my-account">حسابي</a>
+      <a class="public-customer-nav__pill" href="/service-request" data-copy="navGuestServiceRequest">طلب خدمة (غير مشترك)</a>
+    </span>
+  </nav>
+
+  <div class="wrap">
+    <header class="hero hero--no-aside">
+      <div class="hero-main">
+        <h1 data-copy="heroTitle">اشترك واحصل على فرص حملات تناسبك</h1>
+        <p class="hero-lead" data-copy-html="heroLead">
+          هذه الصفحة <strong>للاشتراك كمشترك فقط</strong>. بعد التسجيل افتح «دخول حسابي» لمتابعة حسابك (نقاط، مشاركات، مدفوعات مسجّلة لك).
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#subscribe" data-copy="btnRegister">سجّل مجاناً الآن</a>
+          <a class="btn btn-ghost" href="/subscriber-login" style="text-decoration:none;display:inline-flex" data-copy="btnLoginExisting">لدي حساب — الدخول</a>
+          <a class="btn btn-ghost" href="/service-request" style="text-decoration:none;display:inline-flex" data-copy="btnGuestServiceRequest">طلب خدمة — بدون اشتراك</a>
+        </div>
+      </div>
+      <aside class="hero-side" aria-label="محتوى جانبي من الفريق">
+        <div id="joinHeroAside" class="hero-side-inner"></div>
+      </aside>
+    </header>
+
+    <section id="why">
+      <h2 data-copy="whyHeading">لماذا تنضم إلى قائمتنا؟</h2>
+      <div class="cards">
+        <div class="card">
+          <h3 data-copy="card1Title">فرص مخصّصة</h3>
+          <p class="card-body" data-copy="card1Text">نستخدم مدينتك ومجال اهتمامك كي لا تضيع وقتك على حملات لا تناسبك.</p>
+        </div>
+        <div class="card">
+          <h3 data-copy="card2Title">سجل عندك</h3>
+          <p class="card-body" data-copy="card2Text">من صفحة حسابي (بعد الدخول) تتابع النقاط والمشاركات والمدفوعات المسجّلة لك.</p>
+        </div>
+        <div class="card">
+          <h3 data-copy="card3Title">نقاط ومشاريع لاحقة</h3>
+          <p class="card-body" data-copy="card3Text">كل نقطة اليوم خطوة نحو تعاون أو حملة أكبر غداً.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="steps">
+      <h2 data-copy="stepsHeading">ثلاث خطوات بسيطة</h2>
+      <div class="steps">
+        <div class="step">
+          <div>
+            <strong data-copy="step1Title">املأ البيانات أدناه</strong>
+            <p class="step-body" style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem" data-copy="step1Text">منصة التواصل، اسم المستخدم، رقم الجوال، والمدينة.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <strong data-copy="step2Title">افتح «دخول حسابي»</strong>
+            <p class="step-body" style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem" data-copy="step2Text">صفحة منفصلة للمشتركين فقط — برقم الجوال ورمز التحقق.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div>
+            <strong data-copy="step3Title">شارك وسجّل النقاط</strong>
+            <p class="step-body" style="color:var(--muted);font-size:0.9rem;margin-top:0.25rem" data-copy="step3Text">من حسابي تشاهد الحملات المتاحة وتسجّل مشاركتك.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="subscribe">
+      <h2 data-copy="subscribeHeading">نموذج الاشتراك</h2>
+      <p class="subscribe-intro" style="color:var(--muted);font-size:0.92rem;margin-bottom:0.75rem" data-copy="subscribeIntro">طلبات الخدمات المدفوعة أو الشراء المنفصل يتمّ بالتواصل مع الفريق خارج هذا النموذج.</p>
+      <p class="subscribe-guest-service" style="color:var(--muted);font-size:0.88rem;margin-bottom:0.85rem;line-height:1.6" data-copy-html="guestServiceRequestBlurb">
+        إن أردت <strong>طلب خدمة مدفوعة أو نقاط</strong> دون الانضمام لقائمة المشتركين، استخدم
+        <a href="/service-request">نموذج الطلب العام</a>.
+      </p>
+
+      <div id="formShell" class="form-card">
+        <form id="joinForm">
+          <div class="form-grid">
+            <div class="form-field form-field--platform">
+              <label for="jPlatform" data-copy="labelPlatform">منصة التواصل *</label>
+              <select id="jPlatform" class="field-select" required aria-describedby="jPlatformHint">
+                <option value="instagram">إنستغرام</option>
+              </select>
+              <span id="jPlatformHint" class="hint-small" style="display:block;margin-top:0.35rem" data-copy="hintPlatform">اضغط الحقل لعرض المنصات التي يفعّلها الفريق لصفحة الاشتراك.</span>
+            </div>
+            <div class="form-field form-field--username">
+              <label for="jIg" id="jUsernameLabel" data-copy="labelUsername">اسم المستخدم للمنصة المختارة *</label>
+              <input id="jIg" required data-copy-placeholder="placeholderUsername" placeholder="بدون @ — حسب المنصة المختارة" dir="ltr" style="text-align:left" autocapitalize="off" spellcheck="false" autocomplete="username" />
+            </div>
+            <div class="form-field form-field--phone">
+              <label for="jPhone" data-copy="labelPhone">رقم الجوال *</label>
+              <input id="jPhone" required data-copy-placeholder="placeholderPhone" placeholder="05xxxxxxxx" dir="ltr" style="text-align:left" inputmode="tel" autocomplete="tel" />
+            </div>
+            <div class="form-field form-field--city">
+              <label for="jCity" data-copy="labelCity">المدينة *</label>
+              <input id="jCity" required data-copy-placeholder="placeholderCity" placeholder="مثال: جدة" />
+            </div>
+            <div class="form-field form-field--gender form-field--span2">
+              <label for="jGender" data-copy="labelGender">الجنس</label>
+              <select id="jGender" class="field-select">
+                <option value="unspecified">لم أُحدّد</option>
+                <option value="male">ذكر</option>
+                <option value="female">أنثى</option>
+              </select>
+            </div>
+            <div class="form-field form-field--name form-field--span2">
+              <label for="jName" data-copy="labelName">الاسم الظاهر (اختياري)</label>
+              <input id="jName" data-copy-placeholder="placeholderName" placeholder="كما تحب أن نناديك" />
+            </div>
+            <div class="form-field form-field--full">
+              <label for="jInterests" data-copy="labelInterests">اهتماماتك (مفصولة بفاصلة)</label>
+              <input id="jInterests" data-copy-placeholder="placeholderInterests" placeholder="مثال: مقاهي، عناية، تقنية، سياحة…" />
+            </div>
+          </div>
+          <div class="cta-row" style="margin-top:1.15rem">
+            <button type="submit" class="btn btn-primary" data-copy="submitBtn">إرسال طلب الاشتراك</button>
+          </div>
+          <div id="joinFlash" class="flash" role="alert"></div>
+          <p class="hint-small" data-copy="hintPrivacy">بالمتابعة فإنك تؤكد صحة بياناتك.</p>
+        </form>
+      </div>
+
+      <div id="successPanel" class="success-panel">
+        <h3 data-copy="successTitle">تم استلام طلبك بنجاح</h3>
+        <p style="color:var(--muted);max-width:38ch;margin-inline:auto" data-copy="successLead">الخطوة التالية: صفحة الدخول المخصّصة للمشتركين فقط.</p>
+        <p id="successPhoneWrap" style="display:none;margin-top:1.1rem;font-size:1rem;color:var(--text);max-width:42ch;margin-inline:auto;line-height:1.65;text-align:center">
+          <strong data-copy="successPhoneStrong">رقم جوالك المسجّل:</strong><br />
+          <span id="successPhoneDisplay" dir="ltr" style="display:inline-block;font-weight:800;font-size:1.15rem;letter-spacing:0.03em;margin-top:0.35rem;color:#34d399"></span>
+        </p>
+        <p style="margin-top:1rem;font-size:0.9rem;color:var(--muted);max-width:42ch;margin-inline:auto;line-height:1.65" data-copy-html="successInstructions">
+          ادخل إلى <strong>دخول حسابي</strong> بنفس الجوال ورمز التحقق (في التطوير قد يظهر الرمز في سجل الخادم أو عبر <code dir="ltr">DEV_OTP_HINT=1</code> في <code>.env</code>).
+        </p>
+        <div class="cta-row" style="margin-top:1.25rem">
+          <a href="/subscriber-login?registered=1" class="btn btn-primary" style="text-decoration:none;display:inline-flex" data-copy="successCta">متابعة — دخول حسابي</a>
+        </div>
+        <p style="margin-top:0.65rem;font-size:0.88rem;color:var(--muted)" data-copy="successSecretHint">لا تشارك رمز التحقق مع أحد.</p>
+      </div>
+    </section>
+
+    <footer data-copy="footerText">
+      RuwwadBusiness — رواد الأعمال — بوابة المشتركين للاشتراك والدخول إلى حسابك فقط.
+    </footer>
+  </div>
+
+  <script src="/js/public-copy.js"></script>
+  <script>
+    function showJoinFlash(ok, msg) {
+      const el = document.getElementById('joinFlash');
+      el.className = 'flash ' + (ok ? 'ok' : 'err');
+      el.textContent = msg;
+    }
+
+    function syncJoinUsernamePlaceholder() {
+      const id = document.getElementById('jPlatform').value;
+      const ig = id === 'instagram';
+      const copy = window.__PUBLIC_COPY__?.join || {};
+      const defIg = copy.placeholderUsernameInstagram || 'بدون @ — مثل ahmed.style';
+      const defOther = copy.placeholderUsernameOther || 'بدون @ — أحرف إنجليزية وأرقام و _ و . و -';
+      document.getElementById('jIg').placeholder = ig ? defIg : defOther;
+    }
+
+    function applyJoinSiteLogo(platformLogoUrl) {
+      const img = document.getElementById('joinSiteLogo');
+      if (!img) return;
+      const u = String(platformLogoUrl || '').trim();
+      if (u) {
+        img.src = u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
+        img.alt = 'شعار المنصة';
+        img.style.display = 'block';
+      } else {
+        img.removeAttribute('src');
+        img.alt = '';
+        img.style.display = 'none';
+      }
+    }
+
+    function applyJoinHeroAsideFromApi(data) {
+      const hero = document.querySelector('header.hero');
+      const inner = document.getElementById('joinHeroAside');
+      if (!hero || !inner) return;
+      const raw = data && typeof data === 'object' ? data.joinHeroAsideHtml : '';
+      const html = raw != null && String(raw).trim() !== '' ? String(raw).trim() : '';
+      if (html) {
+        inner.innerHTML = html;
+        hero.classList.remove('hero--no-aside');
+      } else {
+        inner.innerHTML = '';
+        hero.classList.add('hero--no-aside');
+      }
+    }
+
+    function applyJoinHeroFromApi(data) {
+      if (!data || typeof data !== 'object') return;
+      const h1 = document.querySelector('.hero-main h1');
+      const lead = document.querySelector('.hero-main .hero-lead');
+      if (!h1 || !lead) return;
+      if (data.joinHeroTitle != null && String(data.joinHeroTitle).trim() !== '') {
+        h1.textContent = String(data.joinHeroTitle).trim();
+      }
+      if (data.joinHeroLeadHtml != null && String(data.joinHeroLeadHtml).trim() !== '') {
+        lead.innerHTML = String(data.joinHeroLeadHtml).trim();
+      }
+    }
+
+    function applyJoinCmsFromApi(data) {
+      if (!data || typeof data !== 'object') return;
+      const whyH = document.querySelector('#why h2');
+      if (whyH && data.joinWhyHeading != null && String(data.joinWhyHeading).trim() !== '') {
+        whyH.textContent = String(data.joinWhyHeading).trim();
+      }
+
+      const whyPairs = [
+        ['joinWhyCard1Title', 'joinWhyCard1Html'],
+        ['joinWhyCard2Title', 'joinWhyCard2Html'],
+        ['joinWhyCard3Title', 'joinWhyCard3Html'],
+      ];
+      document.querySelectorAll('#why .cards .card').forEach((card, i) => {
+        const pair = whyPairs[i];
+        if (!pair) return;
+        const [tk, hk] = pair;
+        const tRaw = data[tk];
+        const hRaw = data[hk];
+        const hasDb =
+          (tRaw != null && String(tRaw).trim() !== '') || (hRaw != null && String(hRaw).trim() !== '');
+        if (!hasDb) return;
+        const h3 = card.querySelector('h3');
+        const body = card.querySelector('.card-body');
+        if (h3) h3.textContent = tRaw != null && String(tRaw).trim() !== '' ? String(tRaw).trim() : '';
+        if (body) {
+          if (hRaw != null && String(hRaw).trim() !== '') body.innerHTML = String(hRaw).trim();
+          else body.innerHTML = '';
+        }
+      });
+
+      const stepsH = document.querySelector('#steps h2');
+      if (stepsH && data.joinStepsHeading != null && String(data.joinStepsHeading).trim() !== '') {
+        stepsH.textContent = String(data.joinStepsHeading).trim();
+      }
+
+      document.querySelectorAll('#steps .steps .step').forEach((stepEl, i) => {
+        const n = i + 1;
+        const tk = 'joinStep' + n + 'Title';
+        const hk = 'joinStep' + n + 'Html';
+        const tRaw = data[tk];
+        const hRaw = data[hk];
+        const hasDb =
+          (tRaw != null && String(tRaw).trim() !== '') || (hRaw != null && String(hRaw).trim() !== '');
+        if (!hasDb) return;
+        const strong = stepEl.querySelector('strong');
+        const body = stepEl.querySelector('.step-body');
+        if (strong) strong.textContent = tRaw != null && String(tRaw).trim() !== '' ? String(tRaw).trim() : '';
+        if (body) {
+          if (hRaw != null && String(hRaw).trim() !== '') body.innerHTML = String(hRaw).trim();
+          else body.innerHTML = '';
+        }
+      });
+
+      const subH = document.querySelector('#subscribe > h2');
+      if (subH && data.joinSubscribeHeading != null && String(data.joinSubscribeHeading).trim() !== '') {
+        subH.textContent = String(data.joinSubscribeHeading).trim();
+      }
+      const subIntro = document.querySelector('#subscribe .subscribe-intro');
+      if (
+        subIntro &&
+        data.joinSubscribeIntroHtml != null &&
+        String(data.joinSubscribeIntroHtml).trim() !== ''
+      ) {
+        subIntro.innerHTML = String(data.joinSubscribeIntroHtml).trim();
+      }
+    }
+
+    function applyJoinPageFromApi(data) {
+      applyJoinHeroFromApi(data);
+      applyJoinHeroAsideFromApi(data);
+      applyJoinCmsFromApi(data);
+    }
+
+    async function loadJoinPlatforms() {
+      const sel = document.getElementById('jPlatform');
+      sel.innerHTML = '';
+      try {
+        const r = await fetch('/api/settings/join', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        const data = await r.json().catch(() => ({}));
+        applyJoinSiteLogo(data.platformLogoUrl);
+        if (r.ok) applyJoinPageFromApi(data);
+        if (!r.ok || !data.platforms || !data.platforms.length) {
+          sel.innerHTML = '<option value="instagram">إنستغرام</option>';
+          syncJoinUsernamePlaceholder();
+          showJoinFlash(false, data.error || 'تعذّر تحميل المنصات؛ تم افتراض إنستغرام.');
+          return;
+        }
+        sel.innerHTML = data.platforms
+          .map((p) => `<option value="${p.id}">${p.labelAr}</option>`)
+          .join('');
+        syncJoinUsernamePlaceholder();
+        showJoinFlash(false, '');
+      } catch {
+        applyJoinSiteLogo('');
+        sel.innerHTML = '<option value="instagram">إنستغرام</option>';
+        syncJoinUsernamePlaceholder();
+        showJoinFlash(false, 'تعذّر الاتصال بالخادم لتحميل المنصات.');
+      }
+    }
+
+    document.getElementById('jPlatform').addEventListener('change', syncJoinUsernamePlaceholder);
+
+    (async function bootJoin() {
+      await applyPublicCopyFromJson('join');
+      syncJoinUsernamePlaceholder();
+      await loadJoinPlatforms();
+    })();
+
+    document.getElementById('joinForm').onsubmit = async (ev) => {
+      ev.preventDefault();
+      showJoinFlash(false, '');
+      const socialPlatform = document.getElementById('jPlatform').value;
+      const instagramUsername = document.getElementById('jIg').value;
+      const phone = document.getElementById('jPhone').value;
+      const city = document.getElementById('jCity').value.trim();
+      const gender = document.getElementById('jGender').value;
+      const name = document.getElementById('jName').value.trim() || undefined;
+      const intsRaw = document.getElementById('jInterests').value.trim();
+      const interests = intsRaw ? intsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+      try {
+        const r = await fetch('/api/users', {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            socialPlatform,
+            instagramUsername,
+            phone,
+            city,
+            gender,
+            name,
+            interests,
+          }),
+        });
+        const text = await r.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = {};
+        }
+        if (!r.ok) {
+          showJoinFlash(false, data.error || data.message || text || 'تعذّر الإرسال');
+          return;
+        }
+        const storedPhone = data.user && data.user.phone ? String(data.user.phone) : '';
+        function fmtSaDisplay(stored) {
+          let d = String(stored || '').replace(/\D/g, '');
+          if (d.startsWith('966')) d = '0' + d.slice(3);
+          return d || stored || '';
+        }
+        const wrapPh = document.getElementById('successPhoneWrap');
+        const disp = document.getElementById('successPhoneDisplay');
+        if (storedPhone && wrapPh && disp) {
+          disp.textContent = fmtSaDisplay(storedPhone);
+          wrapPh.style.display = 'block';
+        }
+        document.getElementById('formShell').style.display = 'none';
+        document.getElementById('successPanel').classList.add('visible');
+        window.scrollTo({ top: document.getElementById('subscribe').offsetTop - 24, behavior: 'smooth' });
+      } catch {
+        showJoinFlash(false, 'تعذّر الاتصال بالخادم. تحقق من الإنترنت أو حاول لاحقاً.');
+      }
+    };
+  </script>
+  <script src="/js/global-site-banner.js" defer></script>
+</body>
+</html>

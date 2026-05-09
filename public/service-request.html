@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <link rel="stylesheet" href="/css/public-customer-nav.css" />
+  <title>RuwwadBusiness — طلب خدمة أو نقاط — رواد الأعمال</title>
+  <meta name="description" content="اطلب خدمة مدفوعة أو استفساراً عن النقاط منفصلاً عن نموذج الاشتراك." />
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #0f0f12;
+      --elevated: #14141a;
+      --border: rgba(255, 255, 255, 0.075);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --accent-dim: #db2777;
+      --accent-glow: rgba(236, 72, 153, 0.22);
+      --accent-soft: rgba(236, 72, 153, 0.14);
+      --gold: #fbcfe8;
+      --ok: #34d399;
+      --err: #fb7185;
+      --input-bg: #0c0c10;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Tajawal", "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(1200px 520px at 15% -10%, rgba(236, 72, 153, 0.09), transparent 52%),
+                  radial-gradient(900px 480px at 90% 40%, rgba(236, 72, 153, 0.05), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    a { color: #f9a8d4; font-weight: 600; text-decoration: none; }
+    a:hover { color: #fbcfe8; text-decoration: underline; }
+    .wrap {
+      max-width: min(1080px, 96vw);
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2rem) 2.75rem;
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.95rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(165deg, #12121a 0%, #0a0a0e 55%, rgba(8, 8, 9, 0.97) 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .nav-brand-row { display: flex; align-items: center; gap: 0.65rem; }
+    #srSiteLogo {
+      display: none;
+      height: 40px;
+      max-width: 130px;
+      width: auto;
+      object-fit: contain;
+    }
+    .brand { font-weight: 800; font-size: 1.08rem; letter-spacing: -0.02em; }
+    .brand span {
+      background: linear-gradient(135deg, #fbcfe8, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .brand-product-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-inline-start: 0.45rem;
+      vertical-align: middle;
+      unicode-bidi: isolate;
+    }
+    .nav-muted { font-size: 0.84rem; color: var(--muted); font-weight: 600; }
+    .hero {
+      padding: clamp(1.75rem, 4vw, 2.25rem) 0 clamp(1.25rem, 3vw, 1.75rem);
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(1.55rem, 3vw + 1rem, 2rem);
+      font-weight: 800;
+      line-height: 1.28;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.03em;
+    }
+    .hero-lead {
+      color: var(--muted);
+      font-size: clamp(1rem, 1vw + 0.88rem, 1.08rem);
+      max-width: 38rem;
+      margin-inline: auto;
+      line-height: 1.65;
+    }
+    .account-bridge {
+      margin-top: 1.25rem;
+      padding: 1.15rem 1.25rem;
+      border-radius: calc(var(--radius) + 2px);
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: linear-gradient(145deg, rgba(236, 72, 153, 0.12) 0%, rgba(20, 20, 26, 0.94) 48%, var(--elevated) 100%);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.38), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    }
+    .account-bridge h2 {
+      font-size: 1.05rem;
+      margin: 0 0 0.5rem;
+      font-weight: 800;
+      color: #fbcfe8;
+    }
+    .account-bridge p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+    .account-bridge p + p { margin-top: 0.55rem; }
+    .account-bridge code {
+      font-size: 0.82em;
+      padding: 0.12rem 0.35rem;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      color: #fde68a;
+    }
+    .account-bridge-links {
+      font-size: 0.88rem !important;
+      font-weight: 600;
+    }
+    section { margin-top: clamp(1.85rem, 4vw, 2.35rem); }
+    section > h2 {
+      font-size: clamp(1.08rem, 1.2vw + 0.95rem, 1.28rem);
+      margin-bottom: 0.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .form-card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.35rem 1.35rem 1.5rem;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.28);
+    }
+    .form-grid {
+      display: grid;
+      gap: 0.85rem 1rem;
+      margin-top: 0.75rem;
+    }
+    /** صف أفقي للحقول الأساسية على الشاشات الواسعة؛ الخدمات والوصف يبقيان كما هما */
+    .form-grid--horizontal {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .form-grid--horizontal .sr-span-full {
+      grid-column: 1 / -1;
+    }
+    @media (max-width: 900px) {
+      .form-grid--horizontal {
+        grid-template-columns: 1fr;
+      }
+    }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.3rem; font-weight: 600; }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    textarea { min-height: 6.5rem; line-height: 1.55; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(236, 72, 153, 0.55);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+    select.field-select {
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      padding-inline-end: 2.15rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 12 12'%3E%3Cpath fill='%239898a6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 0.65rem) center;
+      background-size: 12px;
+    }
+    .svc-opt {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .svc-opt input { width: auto; margin-top: 0.28rem; flex-shrink: 0; accent-color: var(--accent); }
+    .svc-opt-body { display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0; }
+    .svc-opt-title { font-weight: 600; }
+    .svc-opt-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 400;
+      line-height: 1.55;
+    }
+    .svc-host {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .svc-platform {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(15, 15, 18, 0.55);
+      overflow: hidden;
+    }
+    .svc-platform-head {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.55rem 0.75rem;
+      margin: 0;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: start;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #fbcfe8;
+      cursor: pointer;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      background: linear-gradient(165deg, rgba(22, 22, 28, 0.98), rgba(14, 14, 17, 0.92));
+      transition: filter 0.12s ease;
+    }
+    button.svc-platform-head {
+      -webkit-tap-highlight-color: transparent;
+    }
+    .svc-platform-head:hover {
+      filter: brightness(1.06);
+    }
+    .svc-platform-head:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .svc-platform-chevron {
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      line-height: 1;
+      opacity: 0.8;
+      transition: transform 0.2s ease;
+      margin-inline-start: auto;
+      padding-inline-start: 0.35rem;
+    }
+    .svc-platform-head[aria-expanded="true"] .svc-platform-chevron {
+      transform: rotate(180deg);
+    }
+    .svc-platform-title {
+      flex: 1;
+      min-width: 0;
+    }
+    .svc-platform-icon {
+      width: 2.35rem;
+      height: 2.35rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 11px;
+      overflow: hidden;
+    }
+    .svc-platform-icon svg {
+      display: block;
+    }
+    .svc-platform-icon--instagram {
+      background: linear-gradient(145deg, #f58529, #dd2a7b 45%, #8134af);
+    }
+    .svc-platform-icon--twitter {
+      background: #000;
+      color: #fff;
+    }
+    .svc-platform-icon--youtube {
+      background: #e62117;
+      color: #fff;
+    }
+    .svc-platform-icon--snapchat {
+      background: #fffc00;
+      color: #000;
+    }
+    .svc-platform-icon--tiktok {
+      background: #121212;
+      color: #fff;
+    }
+    .svc-platform-icon--general {
+      background: rgba(236, 72, 153, 0.18);
+      color: #fbcfe8;
+    }
+    .svc-platform-body {
+      padding: 0.45rem 0.55rem 0.55rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .svc-platform-body[hidden] {
+      display: none !important;
+    }
+    .svc-qty-row {
+      margin-top: 0.35rem;
+      padding-inline-start: 0.15rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem 0.65rem;
+    }
+    .svc-qty-row[hidden] {
+      display: none !important;
+    }
+    .svc-qty-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .svc-qty-input {
+      padding: 0.38rem 0.55rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+    }
+    .svc-qty-inline-est {
+      font-size: 0.76rem;
+      color: var(--ok);
+      white-space: normal;
+      max-width: 100%;
+    }
+    #svcPricingTotals {
+      margin-top: 0.45rem;
+      padding: 0.55rem 0.65rem;
+      border-radius: 10px;
+      border: 1px solid rgba(236, 72, 153, 0.28);
+      background: rgba(236, 72, 153, 0.06);
+      font-size: 0.82rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 1.35rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 26px var(--accent-glow);
+    }
+    .btn:hover { box-shadow: 0 8px 34px rgba(236, 72, 153, 0.38); }
+    .btn:active { transform: scale(0.98); }
+    .cta-row { display: flex; gap: 0.65rem; justify-content: center; flex-wrap: wrap; margin-top: 1.1rem; }
+    .hint-small { font-size: 0.78rem; color: var(--muted); margin-top: 0.85rem; line-height: 1.5; }
+    .flash {
+      margin-top: 0.85rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .flash.ok {
+      display: block;
+      background: rgba(52, 211, 153, 0.14);
+      color: var(--ok);
+      border: 1px solid rgba(52, 211, 153, 0.38);
+    }
+    .flash.err {
+      display: block;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    .success-panel {
+      display: none;
+      text-align: center;
+      padding: 2rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(236, 72, 153, 0.35);
+      background: linear-gradient(165deg, rgba(236, 72, 153, 0.1), rgba(20, 20, 26, 0.92));
+      margin-top: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+    .success-panel.visible { display: block; }
+    .success-panel h3 { color: #fbcfe8; }
+    footer {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-brand-row">
+      <img id="srSiteLogo" alt="" />
+      <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
+    </div>
+    <span class="public-customer-nav nav-muted" aria-label="روابط المشترك">
+      <a class="public-customer-nav__pill" href="/join">الاشتراك</a>
+      <a class="public-customer-nav__pill" href="/subscriber-login">دخول حسابي</a>
+      <a class="public-customer-nav__pill" href="/my-account">حسابي</a>
+      <span class="public-customer-nav__pill public-customer-nav__pill--current">طلب خدمة</span>
+    </span>
+  </nav>
+
+  <div class="wrap">
+    <header class="hero">
+      <h1>طلب خدمة مدفوعة أو نقاط</h1>
+      <p class="hero-lead">
+        إن كنت <strong>مشتركاً</strong>، أرسل طلب «خدمة أو نقاط» من صفحة <a href="/my-account">حسابي</a> بعد <a href="/subscriber-login">الدخول</a> — يُربَط تلقائياً بحسابك ويظهر في سجل التحركات.
+        هذه الصفحة مخصّصة لمن ليس أمامه حساب أو يفضّل النموذج العام.
+        <strong>اشتراك القائمة</strong> يبقى من <a href="/join">صفحة الاشتراك</a> فقط.
+      </p>
+    </header>
+
+    <aside class="account-bridge">
+      <h2>المشتركون: الطلب من «حسابي»</h2>
+      <p>
+        الطريق الأساسي لمشتركي المنصة هو فتح <a href="/my-account">حسابي</a> واستخدام قسم <strong>طلب خدمة مدفوعة أو نقاط</strong> هناك — دون الحاجة لهذه الصفحة في المعتاد.
+      </p>
+      <p class="account-bridge-links">
+        <a href="/subscriber-login">دخول حسابي</a>
+        ·
+        <a href="/my-account">فتح حسابي وإرسال الطلب</a>
+        ·
+        <a href="/join">تسجيل كمشترك جديد</a>
+      </p>
+      <p style="margin-top:0.75rem;font-size:0.82rem">
+        إن استخدمت النموذج أدناه بدلاً من ذلك، أدخل رقم جوالك كما في اشتراكك؛ أو ألصق رابط «حسابي» أو معرّف <code dir="ltr">?t=</code> في الحقل الاختياري لربط الطلب بحسابك.
+      </p>
+    </aside>
+
+    <section>
+      <h2>نموذج الطلب</h2>
+      <div id="formShell" class="form-card">
+        <form id="svcForm">
+          <div class="form-grid form-grid--horizontal">
+            <div>
+              <label for="srKind">ما الذي تريد تقديم طلبه؟ *</label>
+              <select id="srKind" class="field-select" required>
+                <option value="paid_service">خدمة مدفوعة</option>
+                <option value="points">نقاط / برنامج النقاط</option>
+                <option value="both">الخدمة المدفوعة والنقاط معاً</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div>
+              <label for="srTitle">عنوان الطلب *</label>
+              <input id="srTitle" required maxlength="200" placeholder="عنوان مختصر يصف طلبك" />
+            </div>
+            <div>
+              <label for="srPhone">رقم الجوال *</label>
+              <input id="srPhone" required placeholder="05xxxxxxxx" dir="ltr" style="text-align:left" inputmode="tel" autocomplete="tel" />
+            </div>
+            <div>
+              <label for="srName">الاسم (اختياري)</label>
+              <input id="srName" placeholder="كما نتواصل معك" />
+            </div>
+            <div class="sr-span-full">
+              <span style="display:block;font-size:0.82rem;color:var(--muted);margin-bottom:0.45rem;font-weight:600">ما الذي تهتم به من خدماتنا؟ (اختياري — أكثر من خيار)</span>
+              <div id="svcOptionsHost" class="svc-host" aria-label="أنواع الخدمات"></div>
+              <div id="svcPricingTotals" hidden></div>
+              <p class="hint" style="margin-top:0.35rem;margin-bottom:0;font-size:0.78rem;line-height:1.55">
+                اضغط عنوان كل منصة لعرض الخدمات أو إخفائها. إن نقصت خدمات في القائمة راجع لوحة الفريق (كل الخدمات أو تحديد كل الصفوف المطلوبة).
+              </p>
+            </div>
+            <div class="sr-span-full">
+              <label for="srDescription">الوصف *</label>
+              <textarea id="srDescription" required maxlength="2500" placeholder="اشرح طلبك: الميزانية، المدة، أو أسئلتك عن النقاط…"></textarea>
+            </div>
+            <div class="sr-span-full">
+              <label for="srPortal">ربط بطلبك في «حسابي» (اختياري)</label>
+              <input id="srPortal" dir="ltr" style="text-align:left" placeholder="اختياري — رابط حسابي أو رمز ?t= أو اتركه فارغاً (يمكن للعميل الدخول لاحقاً برقم جواله من صفحة حسابي)" autocomplete="off" spellcheck="false" />
+              <span class="hint-small" style="display:block;margin-top:0.35rem">يساعد الفريق على مطابقة طلبك مع اشتراكك إن وُجد؛ أو يكفي رقم الجوال أعلاه مع الدخول برمز تحقق من صفحة حسابي.</span>
+            </div>
+          </div>
+          <div class="cta-row">
+            <button type="submit" class="btn">إرسال الطلب</button>
+          </div>
+          <div id="svcFlash" class="flash" role="alert"></div>
+        </form>
+      </div>
+
+      <div id="successPanel" class="success-panel">
+        <h3 style="font-size:1.2rem;margin-bottom:0.5rem">تم استلام طلبك</h3>
+        <p style="color:var(--muted);max-width:36ch;margin-inline:auto;line-height:1.6">سيطلع فريق المنصة على عنوان طلبك ووصفه ويتواصل عند الحاجة.</p>
+        <p style="margin-top:1rem;font-size:0.88rem;color:var(--muted)">
+          <a href="/join">العودة لصفحة الاشتراك</a>
+          ·
+          <a href="/subscriber-login">دخول حسابي</a>
+        </p>
+      </div>
+    </section>
+
+    <footer>
+      RuwwadBusiness — رواد الأعمال — طلبات الخدمة منفصلة عن تسجيل القائمة البريدية للحملات.
+    </footer>
+  </div>
+
+  <script src="/js/global-site-banner.js" defer></script>
+  <script src="/js/instagram-qty-pricing.js"></script>
+  <script>
+    const SOCIAL_QP = (platform, platformLabelAr, pricePer1000, minQty, maxQty, durationHintAr) => ({
+      platform,
+      platformLabelAr,
+      pricePer1000,
+      minQty,
+      maxQty,
+      durationHintAr,
+      pointsFormulaAr: '⌈الكمية ÷ 2⌉',
+      sarFormulaAr: '(الكمية ÷ 1000) × سعر الألف (ريال)',
+    });
+    const IG_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('instagram', 'إنستغرام', pricePer1000, minQty, maxQty, durationHintAr);
+    const TW_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('twitter', 'إكس (تويتر)', pricePer1000, minQty, maxQty, durationHintAr);
+    const TT_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('tiktok', 'تيك توك', pricePer1000, minQty, maxQty, durationHintAr);
+    const SN_QP = (pricePer1000, minQty, maxQty, durationHintAr) =>
+      SOCIAL_QP('snapchat', 'سناب شات', pricePer1000, minQty, maxQty, durationHintAr);
+
+    const FALLBACK_SVC_OPTIONS = [
+      { id: 'campaigns', labelAr: 'المشاركة في الحملات والفرص التسويقية', pricingHintAr: '', quantityPricing: null },
+      {
+        id: 'brand_collab',
+        labelAr: 'تعاون مع علامات تجارية',
+        pricingHintAr: 'يختلف حسب العلامة ونطاق التعاون؛ وضّح نوع المحتوى والمدة في الوصف.',
+        quantityPricing: null,
+      },
+      {
+        id: 'reviews',
+        labelAr: 'مراجعات وتجارب منتجات',
+        pricingHintAr: 'غالباً يشمل استلام منتج أو زيارة؛ اذكر ما إن كان لديك منتج محدد.',
+        quantityPricing: null,
+      },
+      {
+        id: 'events',
+        labelAr: 'فعاليات وزيارات',
+        pricingHintAr: 'يُسعَّر حسب نوع الفعالية والحضور؛ اذكر التاريخ والمدينة إن أمكن.',
+        quantityPricing: null,
+      },
+      {
+        id: 'consulting',
+        labelAr: 'استشارة أو خدمة مخصّصة',
+        pricingHintAr: 'يُقتَرح عرض سعر أو جلسة بعد مراجعة الطلب من الفريق.',
+        quantityPricing: null,
+      },
+      {
+        id: 'followers_pack',
+        labelAr: 'المتابعات (Followers) — إنستغرام',
+        pricingHintAr:
+          'جدول المنصة: سعر الألف 1.85 ر.س؛ الحد 20–500,000؛ نقاط مقترحة ⌈كمية÷2⌉؛ مدة تنفيذ تقريبية 1–24 ساعة.',
+        quantityPricing: IG_QP(1.85, 20, 500000, 'تقريبًا 1 - 24 ساعة'),
+      },
+      {
+        id: 'likes_pack',
+        labelAr: 'الإعجابات (Likes) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 1.85 ر.س؛ الحد 20–100,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 5 دقائق–3 ساعات.',
+        quantityPricing: IG_QP(1.85, 20, 100000, 'تقريبًا 5 دقائق - 3 ساعات'),
+      },
+      {
+        id: 'comments_pack',
+        labelAr: 'التعليقات (Comments) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 4.50 ر.س؛ الحد 5–10,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 1–12 ساعة.',
+        quantityPricing: IG_QP(4.5, 5, 10000, 'تقريبًا 1 - 12 ساعة'),
+      },
+      {
+        id: 'mentions_pack',
+        labelAr: 'المنشن (Mentions) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 9.38 ر.س؛ الحد 100–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: IG_QP(9.38, 100, 50000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'views_pack',
+        labelAr: 'المشاهدات (Views) — إنستغرام',
+        pricingHintAr:
+          'سعر الألف 0.19 ر.س؛ الحد 100–10,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: IG_QP(0.19, 100, 10000000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      {
+        id: 'tw_followers_premium',
+        labelAr: 'متابعين تويتر',
+        pricingHintAr:
+          'جدول تويتر/إكس: سعر الألف 79 ر.س؛ الحد 100–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 24–72 ساعة.',
+        quantityPricing: TW_QP(79, 100, 50000, 'تقريبًا 24 - 72 ساعة'),
+      },
+      {
+        id: 'tw_followers_global',
+        labelAr: 'متابعين (عالمي) — تويتر',
+        pricingHintAr:
+          'سعر الألف 15 ر.س؛ الحد 100–200,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: TW_QP(15, 100, 200000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'tw_retweet',
+        labelAr: 'رتويت (Retweet) — تويتر',
+        pricingHintAr:
+          'سعر الألف 35 ر.س؛ الحد 50–20,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 1–6 ساعات.',
+        quantityPricing: TW_QP(35, 50, 20000, 'تقريبًا 1 - 6 ساعات'),
+      },
+      {
+        id: 'tw_likes',
+        labelAr: 'لايكات (Likes) — تويتر',
+        pricingHintAr:
+          'سعر الألف 19 ر.س؛ الحد 50–50,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 30 دقيقة–3 ساعات.',
+        quantityPricing: TW_QP(19, 50, 50000, 'تقريبًا 30 دقيقة - 3 ساعات'),
+      },
+      {
+        id: 'tw_views',
+        labelAr: 'المشاهدات (Views) — تويتر',
+        pricingHintAr:
+          'سعر الألف 0.99 ر.س؛ الحد 1,000–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: TW_QP(0.99, 1000, 1000000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      {
+        id: 'tt_followers',
+        labelAr: 'المتابعات (Followers) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 3.38 ر.س؛ الحد 100–2,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 12–48 ساعة.',
+        quantityPricing: TT_QP(3.38, 100, 2000000, 'تقريبًا 12 - 48 ساعة'),
+      },
+      {
+        id: 'tt_likes',
+        labelAr: 'إعجابات الفيديو (Likes) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 1.15 ر.س؛ الحد 50–500,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 30 دقيقة–6 ساعات.',
+        quantityPricing: TT_QP(1.15, 50, 500000, 'تقريبًا 30 دقيقة - 6 ساعات'),
+      },
+      {
+        id: 'tt_views',
+        labelAr: 'المشاهدات (Views) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.04 ر.س؛ الحد 500–100,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري (دقائق).',
+        quantityPricing: TT_QP(0.04, 500, 100000000, 'تقريبًا فوري (دقائق)'),
+      },
+      {
+        id: 'tt_comments',
+        labelAr: 'التعليقات (Comments) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 5.60 ر.س؛ الحد 5–20,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية 2–12 ساعة.',
+        quantityPricing: TT_QP(5.6, 5, 20000, 'تقريبًا 2 - 12 ساعة'),
+      },
+      {
+        id: 'tt_shares',
+        labelAr: 'المشاركة (Shares) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.35 ر.س؛ الحد 100–1,000,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعتان.',
+        quantityPricing: TT_QP(0.35, 100, 1000000, 'تقريبًا فوري - ساعتان'),
+      },
+      {
+        id: 'tt_saves',
+        labelAr: 'حفظ الفيديو (Saves) — تيك توك',
+        pricingHintAr:
+          'سعر الألف 0.30 ر.س؛ الحد 100–500,000؛ نقاط ⌈كمية÷2⌉؛ مدة تقريبية فوري–ساعة واحدة.',
+        quantityPricing: TT_QP(0.3, 100, 500000, 'تقريبًا فوري - ساعة واحدة'),
+      },
+      { id: 'other', labelAr: 'أخرى (اذكرها في النص)', pricingHintAr: '', quantityPricing: null },
+    ];
+
+    let svcOptionsCache = [];
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function svcPlatformIconInner(platformId) {
+      switch (platformId) {
+        case 'instagram':
+          return '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="#fff" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="3.35"/><circle cx="17.4" cy="6.6" r="0.95" fill="#fff" stroke="none"/></svg>';
+        case 'twitter':
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="#fff"><path d="M14.23 4h3.23l-7.07 8.08L18 20h-5.95l-4.65-5.88L5.2 20H2l7.56-8.62L2 4h6.1l4.2 5.18L14.23 4z"/></svg>';
+        case 'youtube':
+          return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#fff" d="M21.8 8s-.2-1.7-1-2.4c-.9-1-1.9-1-2.4-1.2C17 4 12 4 12 4s-5 0-6.4.4c-.5.2-1.5.2-2.4 1.2-.8.7-1 2.4-1 2.4S2 10 2 12v0s0 2 .2 3 .6 2.4 1.3 3c.9 1 2 1 2.5 1.2 1.8.4 7.3.4 7.3.4s5 0 6.4-.4c.5-.2 1.5-.2 2.4-1.2.7-.7 1.1-1.8 1.3-3 .2-1 .2-3 .2-3v0s0-2-.2-3-.5-2.3-1.3-3zm-9.8 6V10l5 2-5 2z"/></svg>';
+        case 'snapchat':
+          return '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="#000" d="M12.03 2C9.33 2 7.7 4.2 7.7 7v1.3c-1.95.55-3.25 2.15-3.6 3.9-.25 1.35.55 2.55 1.75 3.05.15.85.85 1.45 1.7 1.45h.35c.35 1.15 1.75 2 3.15 2 1.35 0 2.75-.85 3.1-2h.35c.85 0 1.55-.6 1.7-1.45 1.2-.5 2-1.7 1.75-3.05-.35-1.75-1.65-3.35-3.6-3.9V7c0-2.8-1.65-5-3.95-5H12z"/></svg>';
+        case 'tiktok':
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.69v-.74h-3.27v16.26c0 1.61-1.31 2.92-2.92 2.92s-2.92-1.31-2.92-2.92 1.31-2.92 2.92-2.92c.31 0 .61.05.89.14v-3.34a6.23 6.23 0 00-.89-.06c-3.42 0-6.19 2.77-6.19 6.19S8.26 22 11.68 22s6.19-2.77 6.19-6.19V9.66a8.36 8.36 0 004.72 1.45V7.88a4.87 4.87 0 01-3-.82z"/></svg>';
+        default:
+          return '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>';
+      }
+    }
+
+    function svcPlatformIconModifier(groupId) {
+      const styled = ['instagram', 'twitter', 'youtube', 'snapchat', 'tiktok', 'general'];
+      return styled.includes(groupId) ? groupId : 'general';
+    }
+
+    function renderServiceOpts(opts) {
+      const host = document.getElementById('svcOptionsHost');
+      if (!host) return;
+      svcOptionsCache = Array.isArray(opts) && opts.length ? opts : FALLBACK_SVC_OPTIONS;
+
+      const GROUP_ORDER = ['instagram', 'twitter', 'youtube', 'snapchat', 'tiktok', 'general'];
+      const GROUP_LABEL_FALLBACK = {
+        instagram: 'إنستغرام',
+        twitter: 'إكس (تويتر)',
+        youtube: 'يوتيوب',
+        snapchat: 'سناب شات',
+        tiktok: 'تيك توك',
+        general: 'خدمات عامة',
+      };
+
+      function platformGroupForOpt(o) {
+        const g = String(o.platformGroup || '').trim();
+        if (g) return g;
+        const p = o.quantityPricing && o.quantityPricing.platform;
+        if (p) return p;
+        const id = String(o.id || '');
+        if (id.startsWith('tw_')) return 'twitter';
+        if (id.startsWith('tt_')) return 'tiktok';
+        if (id.startsWith('snap_')) return 'snapchat';
+        if (id.startsWith('ig_')) return 'instagram';
+        if (/followers_pack|likes_pack|comments_pack|mentions_pack|views_pack/.test(id)) return 'instagram';
+        return 'general';
+      }
+
+      function renderOneOpt(o) {
+        const hint = String(o.pricingHintAr || '').trim();
+        const hintHtml = hint ? `<small class="svc-opt-hint">${escapeHtml(hint)}</small>` : '';
+        const qp = o.quantityPricing;
+        let qtyHtml = '';
+        if (qp) {
+          qtyHtml = `
+        <div class="svc-qty-row" hidden data-qty-for="${escapeHtml(o.id)}">
+          <span class="svc-qty-label">الكمية (${escapeHtml(qp.platformLabelAr || qp.platform || '')})</span>
+          <input type="number" class="svc-qty-input" min="${qp.minQty}" max="${qp.maxQty}" step="1" inputmode="numeric" data-svc-qty="${escapeHtml(o.id)}" placeholder="${qp.minQty}–${qp.maxQty}" dir="ltr" />
+          <span class="svc-qty-inline-est mono" data-svc-est="${escapeHtml(o.id)}"></span>
+        </div>`;
+        }
+        return `<label class="svc-opt" data-opt="${escapeHtml(o.id)}"><input type="checkbox" name="svcChk" value="${escapeHtml(o.id)}" /><span class="svc-opt-body"><span class="svc-opt-title">${escapeHtml(o.labelAr)}</span>${hintHtml}${qtyHtml}</span></label>`;
+      }
+
+      const byGroup = new Map();
+      svcOptionsCache.forEach((o) => {
+        const g = platformGroupForOpt(o);
+        if (!byGroup.has(g)) byGroup.set(g, []);
+        byGroup.get(g).push(o);
+      });
+
+      const keysWithItems = [...byGroup.keys()].filter((k) => (byGroup.get(k) || []).length);
+      keysWithItems.sort((a, b) => {
+        const ia = GROUP_ORDER.indexOf(a);
+        const ib = GROUP_ORDER.indexOf(b);
+        if (ia === -1 && ib === -1) return String(a).localeCompare(String(b));
+        if (ia === -1) return 1;
+        if (ib === -1) return -1;
+        return ia - ib;
+      });
+
+      let html = '';
+      let platIdx = 0;
+      for (const groupId of keysWithItems) {
+        const list = byGroup.get(groupId);
+        platIdx += 1;
+        const btnId = `svcPlatBtn_${platIdx}`;
+        const bodyId = `svcPlatBody_${platIdx}`;
+        const titleAr =
+          String((list[0] && list[0].platformGroupLabelAr) || '').trim() ||
+          GROUP_LABEL_FALLBACK[groupId] ||
+          groupId;
+        const mod = svcPlatformIconModifier(groupId);
+        const iconInner = svcPlatformIconInner(groupId);
+        html += `
+      <section class="svc-platform" data-platform="${escapeHtml(groupId)}" aria-label="${escapeHtml(titleAr)}">
+        <button type="button" class="svc-platform-head svc-platform-toggle" id="${btnId}" aria-expanded="false" aria-controls="${bodyId}">
+          <span class="svc-platform-icon svc-platform-icon--${escapeHtml(mod)}" aria-hidden="true">${iconInner}</span>
+          <span class="svc-platform-title">${escapeHtml(titleAr)}</span>
+          <span class="svc-platform-chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="svc-platform-body" id="${bodyId}" role="region" aria-labelledby="${btnId}" hidden>
+          ${list.map(renderOneOpt).join('')}
+        </div>
+      </section>`;
+      }
+
+      host.innerHTML = html;
+      wireSvcPlatformAccordion();
+      wireSvcOptionsInteractions();
+      syncSvcQtyVisibility();
+      updateSvcPricingTotals();
+    }
+
+    function wireSvcPlatformAccordion() {
+      const host = document.getElementById('svcOptionsHost');
+      if (!host || host.dataset.acc === '1') return;
+      host.dataset.acc = '1';
+      host.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('.svc-platform-toggle');
+        if (!btn || !host.contains(btn)) return;
+        ev.preventDefault();
+        const sec = btn.closest('.svc-platform');
+        const body = sec?.querySelector('.svc-platform-body');
+        if (!body) return;
+        const isOpen = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        body.hidden = isOpen;
+      });
+    }
+
+    function wireSvcOptionsInteractions() {
+      const host = document.getElementById('svcOptionsHost');
+      if (!host || host.dataset.wired === '1') return;
+      host.dataset.wired = '1';
+      host.addEventListener('change', (ev) => {
+        if (ev.target.matches('input[name="svcChk"]')) {
+          syncSvcQtyVisibility();
+          updateSvcPricingTotals();
+        }
+      });
+      host.addEventListener('input', (ev) => {
+        if (ev.target.matches('.svc-qty-input')) updateSvcPricingTotals();
+      });
+    }
+
+    function syncSvcQtyVisibility() {
+      document.querySelectorAll('#svcOptionsHost .svc-opt').forEach((lab) => {
+        const cb = lab.querySelector('input[name="svcChk"]');
+        const row = lab.querySelector('.svc-qty-row');
+        if (!cb || !row) return;
+        row.hidden = !cb.checked;
+        if (!cb.checked) {
+          const inp = row.querySelector('.svc-qty-input');
+          const est = row.querySelector('.svc-qty-inline-est');
+          if (inp) inp.value = '';
+          if (est) est.textContent = '';
+        }
+      });
+    }
+
+    function updateSvcPricingTotals() {
+      const panel = document.getElementById('svcPricingTotals');
+      if (!panel || !window.instagramQtyEstimate) return;
+      let totalSar = 0;
+      let totalPts = 0;
+      let nLines = 0;
+      document.querySelectorAll('#svcOptionsHost input[name="svcChk"]:checked').forEach((cb) => {
+        const id = cb.value;
+        const opt = svcOptionsCache.find((x) => x.id === id);
+        const qp = opt?.quantityPricing;
+        if (!qp) return;
+        const lab = cb.closest('.svc-opt');
+        const inp = lab.querySelector(`input.svc-qty-input[data-svc-qty="${id}"]`);
+        const estEl = lab.querySelector(`span.svc-qty-inline-est[data-svc-est="${id}"]`);
+        const raw = inp?.value;
+        if (!raw || !String(raw).trim()) {
+          if (estEl) estEl.textContent = '';
+          return;
+        }
+        const r = window.instagramQtyEstimate.compute(qp, raw);
+        if (!r.ok) {
+          if (estEl) estEl.textContent = r.errorAr || '—';
+          return;
+        }
+        if (estEl) estEl.textContent = `≈ ${r.priceSar} ر.س · ${r.pointsRequired} نقطة`;
+        totalSar += r.priceSar;
+        totalPts += r.pointsRequired;
+        nLines += 1;
+      });
+      totalSar = Math.round(totalSar * 100) / 100;
+      if (nLines === 0) {
+        panel.hidden = true;
+        panel.textContent = '';
+        return;
+      }
+      panel.hidden = false;
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصات المعروضة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.76rem">(لا يُخصم من الرصيد تلقائياً)</span>`;
+    }
+
+    function showFlash(ok, msg) {
+      const el = document.getElementById('svcFlash');
+      el.className = 'flash ' + (ok ? 'ok' : 'err');
+      el.textContent = msg;
+    }
+
+    function applySrSiteLogo(platformLogoUrl) {
+      const img = document.getElementById('srSiteLogo');
+      if (!img) return;
+      const u = String(platformLogoUrl || '').trim();
+      if (u) {
+        img.src = u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
+        img.alt = 'شعار المنصة';
+        img.style.display = 'block';
+      } else {
+        img.removeAttribute('src');
+        img.alt = '';
+        img.style.display = 'none';
+      }
+    }
+
+    async function loadSiteLogoForNav() {
+      try {
+        const r = await fetch('/api/settings/join', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        const data = await r.json().catch(() => ({}));
+        applySrSiteLogo(data.platformLogoUrl);
+      } catch {
+        applySrSiteLogo('');
+      }
+    }
+
+    async function loadOptions() {
+      try {
+        const r = await fetch('/api/public/service-request-options', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        const data = await r.json().catch(() => ({}));
+        renderServiceOpts(data.serviceOptions);
+      } catch {
+        renderServiceOpts(null);
+      }
+    }
+
+    loadSiteLogoForNav();
+    loadOptions();
+
+    document.getElementById('svcForm').onsubmit = async (ev) => {
+      ev.preventDefault();
+      showFlash(false, '');
+      const requestKind = document.getElementById('srKind').value;
+      const phone = document.getElementById('srPhone').value;
+      const name = document.getElementById('srName').value.trim();
+      const title = document.getElementById('srTitle').value.trim();
+      const details = document.getElementById('srDescription').value.trim();
+      const portalLink = document.getElementById('srPortal').value.trim();
+      const requestedServices = [...document.querySelectorAll('#svcForm input[name="svcChk"]:checked')].map((c) => c.value);
+
+      for (const cb of document.querySelectorAll('#svcForm input[name="svcChk"]:checked')) {
+        const opt = svcOptionsCache.find((x) => x.id === cb.value);
+        if (!opt?.quantityPricing) continue;
+        const lab = cb.closest('.svc-opt');
+        const inp = lab?.querySelector('.svc-qty-input');
+        const v = inp?.value?.trim();
+        if (!v) {
+          showFlash(false, `أدخل الكمية لخدمة «${opt.labelAr}» وفق جدول الكمية المعروض تحت أيقونة المنصة.`);
+          return;
+        }
+      }
+
+      const serviceQuantities = {};
+      document.querySelectorAll('#svcForm input[name="svcChk"]:checked').forEach((cb) => {
+        const opt = svcOptionsCache.find((x) => x.id === cb.value);
+        if (!opt?.quantityPricing) return;
+        const lab = cb.closest('.svc-opt');
+        const inp = lab?.querySelector('.svc-qty-input');
+        const v = inp?.value?.trim();
+        if (v) serviceQuantities[cb.value] = Math.floor(Number(v));
+      });
+
+      try {
+        const r = await fetch('/api/client/service-requests', {
+          method: 'POST',
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            requestKind,
+            phone,
+            title,
+            name: name || undefined,
+            details,
+            requestedServices,
+            serviceQuantities,
+            portalLink: portalLink || undefined,
+          }),
+        });
+        const text = await r.text();
+        let data;
+        try {
+          data = text ? JSON.parse(text) : {};
+        } catch {
+          data = {};
+        }
+        if (!r.ok) {
+          showFlash(false, data.error || data.message || text || 'تعذّر الإرسال');
+          return;
+        }
+        document.getElementById('formShell').style.display = 'none';
+        document.getElementById('successPanel').classList.add('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch {
+        showFlash(false, 'تعذّر الاتصال بالخادم.');
+      }
+    };
+  </script>
+</body>
+</html>

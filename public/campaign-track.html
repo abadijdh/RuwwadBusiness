@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/scrollbar-right-rtl.css" />
+  <link rel="stylesheet" href="/css/public-customer-nav.css" />
+  <title>RuwwadBusiness — تتبع الحملة — رواد الأعمال</title>
+  <style>
+    :root {
+      --bg: #070708;
+      --surface: #0f0f12;
+      --elevated: #14141a;
+      --border: rgba(255, 255, 255, 0.075);
+      --text: #f4f4f8;
+      --muted: #9898a6;
+      --accent: #ec4899;
+      --accent-dim: #db2777;
+      --accent-glow: rgba(236, 72, 153, 0.22);
+      --gold: #fbcfe8;
+      --ok: #34d399;
+      --err: #fb7185;
+      --input-bg: #0c0c10;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Tajawal", "Segoe UI", Tahoma, system-ui, sans-serif;
+      background: radial-gradient(1200px 520px at 15% -10%, rgba(236, 72, 153, 0.09), transparent 52%),
+                  radial-gradient(900px 480px at 90% 40%, rgba(236, 72, 153, 0.05), transparent 50%),
+                  var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    a { color: #f9a8d4; font-weight: 600; text-decoration: none; }
+    a:hover { color: #fbcfe8; text-decoration: underline; }
+    code {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.82em;
+      padding: 0.12rem 0.38rem;
+      border-radius: 6px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--gold);
+    }
+    .wrap {
+      max-width: min(720px, 96vw);
+      margin: 0 auto;
+      padding: 0 clamp(1rem, 3vw, 2rem) max(2.5rem, env(safe-area-inset-bottom, 0px));
+    }
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.95rem clamp(1rem, 3vw, 2rem);
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(165deg, #12121a 0%, #0a0a0e 55%, rgba(8, 8, 9, 0.97) 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand { font-weight: 800; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand span {
+      background: linear-gradient(135deg, #fbcfe8, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .brand-product-id {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-inline-start: 0.45rem;
+      vertical-align: middle;
+      unicode-bidi: isolate;
+    }
+    .hero {
+      margin-top: clamp(1rem, 2.5vw, 1.5rem);
+      text-align: center;
+      padding: clamp(0.85rem, 2vw, 1.25rem) 0 clamp(0.75rem, 2vw, 1.1rem);
+    }
+    .hero h1 {
+      font-size: clamp(1.35rem, 2.5vw + 0.85rem, 1.85rem);
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.03em;
+      line-height: 1.28;
+    }
+    .hero p { color: var(--muted); font-size: 0.92rem; max-width: 42rem; margin-inline: auto; }
+    .hero-actions {
+      margin-top: 1.15rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+    .btn-back-account {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.58rem 1.35rem;
+      border-radius: 11px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: var(--gold);
+      background: rgba(236, 72, 153, 0.12);
+      border: 1px solid rgba(236, 72, 153, 0.38);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.2);
+      text-decoration: none;
+      transition: filter 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-back-account:hover {
+      filter: brightness(1.08);
+      border-color: rgba(251, 207, 232, 0.55);
+      color: #fff;
+      text-decoration: none;
+    }
+    .card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.2rem;
+      margin-top: 1rem;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.26);
+    }
+    .card h2 { font-size: 1rem; color: var(--gold); margin-bottom: 0.75rem; font-weight: 700; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+    .stat {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem;
+      text-align: center;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.22);
+    }
+    .stat .num { font-size: 1.45rem; font-weight: 800; color: var(--accent); }
+    .stat .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.45; }
+    .kv {
+      display: grid;
+      gap: 0.45rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .kv strong { color: var(--text); }
+    .flash {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .flash.err {
+      display: block;
+      background: rgba(251, 113, 133, 0.14);
+      color: var(--err);
+      border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    .hint { font-size: 0.82rem; color: var(--muted); margin-top: 0.65rem; line-height: 1.55; }
+    .paste-card {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.15rem;
+      margin-top: 1rem;
+      box-shadow: 0 4px 22px rgba(0, 0, 0, 0.22);
+    }
+    .paste-card label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .paste-card input {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-size: 0.88rem;
+      margin-bottom: 0.65rem;
+      font-family: inherit;
+    }
+    .paste-card button {
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      padding: 0.55rem 1.2rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      color: #fff;
+      box-shadow: 0 6px 22px var(--accent-glow);
+    }
+    .paste-card button:hover { filter: brightness(1.06); }
+    footer {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
+    <div class="nav-actions">
+      <span class="public-customer-nav" aria-label="روابط المشترك">
+        <a class="public-customer-nav__pill" href="/join">الاشتراك</a>
+        <a class="public-customer-nav__pill" href="/subscriber-login">دخول حسابي</a>
+        <a class="public-customer-nav__pill" href="/my-account">حسابي</a>
+      </span>
+    </div>
+  </nav>
+  <div class="wrap">
+    <header class="hero">
+      <h1>تتبع الحملة</h1>
+      <p>ملخص التقدّم وسُبل القياس التي تعكس ما يُسجَّل في المنصة — لا تشارك الرابط مع أحد غير المصرّح له.</p>
+      <div class="hero-actions">
+        <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
+      </div>
+    </header>
+
+    <div id="pasteGate" style="display:none">
+      <div id="gateErr" class="flash err" role="alert"></div>
+      <p class="hint" style="margin-top:0.65rem;text-align:center">
+        افتح الصفحة من <strong>الرابط الكامل</strong> الذي أرسله لكم فريق المنصة (<strong dir="ltr">RuwwadBusiness</strong> — رواد الأعمال) (يحتوي على <code dir="ltr">?t=</code>)، أو الصقه أدناه.
+      </p>
+      <div class="paste-card">
+        <label for="pasteTrack">الصق رابط التتبع أو الرمز الطويل</label>
+        <input id="pasteTrack" type="text" dir="ltr" style="text-align:left" placeholder="مثال: …/campaign-track?t=…" autocomplete="off" spellcheck="false" />
+        <button type="button" id="btnOpenTrack">عرض التتبع</button>
+      </div>
+    </div>
+
+    <div id="gateErrFetch" class="flash err" role="alert" style="display:none;margin-top:1rem"></div>
+
+    <div id="mainPanels" style="display:none">
+      <div class="stats">
+        <div class="stat">
+          <div id="statProgress" class="num">—</div>
+          <div class="lbl">المشاركات المسجّلة / الهدف</div>
+        </div>
+        <div class="stat">
+          <div id="statClicks" class="num">—</div>
+          <div class="lbl">ضغطات رابط التتبع (/go)</div>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2>بيانات الحملة</h2>
+        <div id="kvGrid" class="kv"></div>
+        <p id="disc" class="hint" style="margin-top:0.75rem;margin-bottom:0"></p>
+      </section>
+    </div>
+
+    <footer>احفظ رابط التتبع في مكان آمن كما يوجّهكم فريق المنصة.</footer>
+  </div>
+
+  <script>
+    function qs(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function extractTrackToken(raw) {
+      const s = String(raw ?? '').trim();
+      if (!s) return null;
+      if (s.startsWith('?')) {
+        const sp = new URLSearchParams(s.slice(1));
+        const ttq = sp.get('t');
+        if (ttq && ttq.trim().length >= 24) return ttq.trim();
+      }
+      let u = null;
+      try {
+        u = new URL(s);
+      } catch {
+        try {
+          u = new URL(s, window.location.origin);
+        } catch {
+          u = null;
+        }
+      }
+      if (u) {
+        const tt = u.searchParams.get('t');
+        if (tt && tt.trim().length >= 24) return tt.trim();
+      }
+      const oneLine = s.replace(/\s/g, '');
+      if (/^[a-f0-9]{32,128}$/i.test(oneLine)) return oneLine;
+      return null;
+    }
+
+    function campaignTypeAr(t) {
+      const id = String(t || '').trim();
+      const map = { visit: 'زيارة / زوار', like: 'لايكات', follow: 'متابعين', comment: 'كومنتات' };
+      return map[id] || (id || '—');
+    }
+
+    function destinationKindAr(k) {
+      if (k === 'website') return 'موقع';
+      if (k === 'store') return 'متجر';
+      if (k === 'other') return 'أخرى';
+      return 'تواصل';
+    }
+
+    function statusAr(st) {
+      const s = String(st || '').trim();
+      if (s === 'completed') return 'مكتملة';
+      if (s === 'active') return 'نشطة';
+      return escapeHtml(s || '—');
+    }
+
+    const t = qs('t');
+    const pasteGate = document.getElementById('pasteGate');
+    const gateErr = document.getElementById('gateErr');
+    const gateErrFetch = document.getElementById('gateErrFetch');
+
+    if (!t || t.length < 24) {
+      pasteGate.style.display = 'block';
+      gateErr.style.display = 'block';
+      gateErr.textContent = 'لم يُعثر على رمز التتبع في عنوان الصفحة (`?t=`). استخدم الحقل أدناه.';
+      document.getElementById('btnOpenTrack').onclick = () => {
+        const tok = extractTrackToken(document.getElementById('pasteTrack').value);
+        if (!tok) {
+          gateErr.style.display = 'block';
+          gateErr.textContent = 'لم أتمكن من قراءة الرمز. الصق الرابط كاملاً أو الرمز الطويل فقط.';
+          return;
+        }
+        window.location.assign(`${window.location.pathname}?t=${encodeURIComponent(tok)}`);
+      };
+    } else {
+      (async () => {
+        try {
+          const r = await fetch(`/api/campaign-portal/summary?t=${encodeURIComponent(t)}`, {
+            cache: 'no-store',
+            headers: { Accept: 'application/json' },
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            pasteGate.style.display = 'block';
+            gateErrFetch.style.display = 'block';
+            gateErrFetch.textContent = data.error || 'تعذّر تحميل البيانات.';
+            return;
+          }
+          gateErrFetch.style.display = 'none';
+          pasteGate.style.display = 'none';
+          document.getElementById('mainPanels').style.display = 'block';
+
+          const c = data.campaign || {};
+          const tgt = c.targetCount != null ? Number(c.targetCount) : null;
+          const cur = Number(c.currentCount ?? 0);
+          document.getElementById('statProgress').textContent =
+            tgt != null && Number.isFinite(tgt) ? `${cur} / ${tgt}` : String(cur);
+          document.getElementById('statClicks').textContent = String(data.stats?.linkClicksTotal ?? 0);
+
+          document.getElementById('kvGrid').innerHTML = `
+            <div><strong>العنوان:</strong> ${escapeHtml(c.title || '—')}</div>
+            <div><strong>حالة الحملة:</strong> ${statusAr(c.status)}</div>
+            <div><strong>التصنيف التجاري:</strong> ${escapeHtml(c.billingKindAr || '—')}</div>
+            <div><strong>نوع التفاعل المطلوب:</strong> ${escapeHtml(campaignTypeAr(c.interactionType))}</div>
+            <div><strong>وجهة الحملة:</strong> ${escapeHtml(destinationKindAr(c.destinationKind))}</div>
+          `;
+          document.getElementById('disc').textContent = data.disclaimer || '';
+        } catch {
+          pasteGate.style.display = 'block';
+          gateErrFetch.style.display = 'block';
+          gateErrFetch.textContent = 'تعذّر الاتصال بالخادم.';
+        }
+      })();
+    }
+  </script>
+  <script src="/js/global-site-banner.js" defer></script>
+</body>
+</html>

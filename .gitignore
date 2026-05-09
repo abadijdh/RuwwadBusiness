@@ -1,0 +1,8 @@
+node_modules/
+.env
+firebase-admin-sdk.json
+*.log
+
+# صور المشتركين المرفوعة محلياً
+public/uploads/branding/*
+!public/uploads/branding/.gitkeep

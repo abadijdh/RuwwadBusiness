@@ -1,0 +1,28 @@
+{
+  "name": "platform-api",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop roaed-api",
+    "pm2:restart": "pm2 restart roaed-api",
+    "pm2:logs": "pm2 logs roaed-api",
+    "pm2:delete": "pm2 delete roaed-api",
+    "docker:build": "docker build -t roaed-web .",
+    "docker:run": "docker run --rm -p 5000:5000 --env-file .env roaed-web"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "pm2": "^6.0.8"
+  },
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mongoose": "^8.8.0",
+    "multer": "^2.1.1"
+  }
+}
