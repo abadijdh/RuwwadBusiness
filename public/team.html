@@ -847,6 +847,9 @@
     <section id="sec-requests" class="card">
       <h2>طلبات العملاء (خدمات مدفوعة / نقاط)</h2>
       <p class="hint" style="margin-top:0">تُرسل من <a href="/service-request" target="_blank" rel="noopener">صفحة طلب الخدمة</a> — وليس من نموذج الاشتراك.</p>
+      <p class="hint" style="margin-top:0.35rem">
+        زر <strong>«تحضير حملة»</strong> يفتح <strong>إنشاء حملة</strong> ويملأ حقل <strong>معرّف مشترك مستهدَف</strong> عندما يكون الطلب مربوطاً بحساب في عمود «حسابي»؛ إن لم يوجد ربط فسيُعرض <strong>غير مربوط</strong> لأن المعرّف يُشتق من حساب مشترك مسجّل وليس من رقم الجوال وحده.
+      </p>
       <div class="row">
         <button type="button" class="secondary" id="btnClientRequestsRefresh">تحديث الجدول</button>
       </div>
@@ -864,6 +867,7 @@
               <th scope="col">التفاصيل</th>
               <th scope="col">حالة التنفيذ</th>
               <th scope="col">حسابي</th>
+              <th scope="col">تحضير حملة</th>
               <th scope="col">حذف</th>
             </tr>
           </thead>
@@ -1509,7 +1513,7 @@
       const prev = document.getElementById('logoPreview');
       if (!headerImg || !prev) return;
       if (u) {
-        const src = u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
+        const src = /^https?:\/\//i.test(u) ? u : u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
         headerImg.src = src;
         headerImg.alt = 'شعار المنصة';
         headerImg.style.display = 'block';
@@ -2374,6 +2378,11 @@
                   row.linkedViaPortal && row.userId
                     ? `نعم (${escapeHtml(row.userUsername || '')})`
                     : '<span style="color:var(--muted)">لا</span>';
+                const uidRaw = String(row.userId || '').trim();
+                const reqTitleShort = String(row.title || '').trim().slice(0, 200);
+                const prepCampaignCell = uidRaw
+                  ? `<button type="button" class="small secondary cr-prep-campaign-btn" data-user-id="${escapeHtml(uidRaw)}" data-req-title="${escapeHtml(reqTitleShort)}">تحضير حملة</button>`
+                  : `<span style="color:var(--muted);font-size:0.76rem;max-width:6rem;display:inline-block" title="الطلب غير مربوط بمستخدم في المنصة؛ أنشئ المشترك أو اطلب الخدمة من «حسابي» ليُربط الطلب تلقائياً.">غير مربوط</span>`;
                 const fst = row.fulfillmentStatus || 'pending';
                 const fstAr = row.fulfillmentStatusAr || 'قيد المعالجة';
                 const statusBadgeClass = fst === 'completed' ? 'is-done' : fst === 'cancelled' ? 'is-cancel' : '';
@@ -2398,16 +2407,17 @@
                 </div>
               </td>
               <td style="font-size:0.8rem">${linkHint}</td>
+              <td style="vertical-align:top;font-size:0.78rem">${prepCampaignCell}</td>
               <td style="vertical-align:top">
                 <button type="button" class="small secondary cr-delete-btn" data-cr-id="${escapeHtml(row.id)}">حذف</button>
               </td>
             </tr>`;
               })
               .join('')
-          : '<tr><td colspan="11" style="color:var(--muted)">لا طلبات بعد</td></tr>';
+          : '<tr><td colspan="12" style="color:var(--muted)">لا طلبات بعد</td></tr>';
         if (statusEl) statusEl.textContent = `تم التحديث — ${formatJustUpdated()}`;
       } catch (e) {
-        body.innerHTML = `<tr><td colspan="11" class="flash err">${escapeHtml(e.message)}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="12" class="flash err">${escapeHtml(e.message)}</td></tr>`;
         if (statusEl) statusEl.textContent = `فشل: ${e.message}`;
       }
     }
@@ -2629,6 +2639,36 @@
     });
 
     document.getElementById('clientRequestsBody').addEventListener('click', async (ev) => {
+      const prepBtn = ev.target.closest('.cr-prep-campaign-btn');
+      if (prepBtn) {
+        const userId = prepBtn.getAttribute('data-user-id');
+        const reqTitle = prepBtn.getAttribute('data-req-title') || '';
+        if (!userId) return;
+        clearCampaignEditMode();
+        document.getElementById('formCampaign')?.reset();
+        const hid = document.getElementById('editCampaignId');
+        if (hid) hid.value = '';
+        updateCampEditUi();
+        const ct = document.getElementById('cTarget');
+        if (ct) ct.value = '10';
+        const st = document.getElementById('cStatus');
+        if (st) st.value = 'active';
+        const tu = document.getElementById('cTargetUserId');
+        if (tu) tu.value = userId;
+        const titleEl = document.getElementById('cTitle');
+        if (titleEl) {
+          const hint = reqTitle.trim() ? `متابعة طلب عميل: ${reqTitle.trim()}` : 'حملة مرتبطة بطلب عميل';
+          titleEl.value = hint.slice(0, 180);
+        }
+        showDashPage('campaign-new');
+        document.getElementById('sec-campaign')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showFlash(
+          document.getElementById('campFlash'),
+          'تم تعبئة «معرّف مشترك مستهدَف» من صف الطلب. أكمل رابط الحملة والمدينة والاهتمام ثم أنشئ الحملة.',
+          true
+        );
+        return;
+      }
       const delBtn = ev.target.closest('.cr-delete-btn');
       if (delBtn) {
         const id = delBtn.getAttribute('data-cr-id');
@@ -2642,7 +2682,7 @@
           if (stEl) stEl.textContent = 'تم حذف الطلب.';
           const body = document.getElementById('clientRequestsBody');
           if (body && !body.querySelector('tr[data-cr-row]')) {
-            body.innerHTML = '<tr><td colspan="11" style="color:var(--muted)">لا طلبات بعد</td></tr>';
+            body.innerHTML = '<tr><td colspan="12" style="color:var(--muted)">لا طلبات بعد</td></tr>';
           }
         } catch (e) {
           alert(e.message);

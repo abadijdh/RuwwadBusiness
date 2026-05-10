@@ -565,7 +565,7 @@
       if (!img) return;
       const u = String(platformLogoUrl || '').trim();
       if (u) {
-        img.src = u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
+        img.src = /^https?:\/\//i.test(u) ? u : u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
         img.alt = 'شعار المنصة';
         img.style.display = 'block';
       } else {

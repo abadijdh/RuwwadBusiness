@@ -1421,7 +1421,7 @@
       const prev = document.getElementById('logoPreview');
       if (!headerImg || !prev) return;
       if (u) {
-        const src = u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
+        const src = /^https?:\/\//i.test(u) ? u : u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`;
         headerImg.src = src;
         headerImg.alt = 'شعار المنصة';
         headerImg.style.display = 'block';

@@ -123,6 +123,25 @@
       color: #fff;
       text-decoration: none;
     }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      justify-content: flex-end;
+    }
+    .btn-back-account--nav {
+      padding: 0.48rem 1rem;
+      font-size: 0.84rem;
+      white-space: nowrap;
+    }
+    .footer-back {
+      margin-top: 1rem;
+      display: block;
+      text-align: center;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
     .card {
       background: var(--elevated);
       border: 1px solid var(--border);
@@ -216,6 +235,7 @@
   <nav>
     <div class="brand">رواد <span>الأعمال</span><span class="brand-product-id" dir="ltr">RuwwadBusiness</span></div>
     <div class="nav-actions">
+      <a class="btn-back-account btn-back-account--nav" href="/my-account">الرجوع إلى حسابي</a>
       <span class="public-customer-nav" aria-label="روابط المشترك">
         <a class="public-customer-nav__pill" href="/join">الاشتراك</a>
         <a class="public-customer-nav__pill" href="/subscriber-login">دخول حسابي</a>
@@ -241,6 +261,9 @@
         <label for="pasteTrack">الصق رابط التتبع أو الرمز الطويل</label>
         <input id="pasteTrack" type="text" dir="ltr" style="text-align:left" placeholder="مثال: …/campaign-track?t=…" autocomplete="off" spellcheck="false" />
         <button type="button" id="btnOpenTrack">عرض التتبع</button>
+        <p style="margin-top: 1rem; text-align: center">
+          <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
+        </p>
       </div>
     </div>
 
@@ -262,10 +285,16 @@
         <h2>بيانات الحملة</h2>
         <div id="kvGrid" class="kv"></div>
         <p id="disc" class="hint" style="margin-top:0.75rem;margin-bottom:0"></p>
+        <p style="margin-top: 1.1rem; text-align: center">
+          <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
+        </p>
       </section>
     </div>
 
-    <footer>احفظ رابط التتبع في مكان آمن كما يوجّهكم فريق المنصة.</footer>
+    <footer>
+      احفظ رابط التتبع في مكان آمن كما يوجّهكم فريق المنصة.
+      <a class="footer-back btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
+    </footer>
   </div>
 
   <script>
