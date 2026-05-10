@@ -1105,7 +1105,14 @@ const campaignSchema = new mongoose.Schema({
    * إن لم يُملأ «الرابط» بصيغة http صالحة يُعرَض للمشاركين زر يفتح حساب هذا المشترك تلقائياً.
    */
   targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  /** مرجع اختياري لصف «طلبات العملاء» — يُعرَض في صفحة تتبع الحملة لصاحب العلامة */
+  linkedClientServiceRequestId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClientServiceRequest',
+    default: null,
+  },
 });
+campaignSchema.index({ linkedClientServiceRequestId: 1 }, { sparse: true });
 const Campaign = mongoose.model('Campaign', campaignSchema);
 
 /** نص إرشاد للمشرف عند إصدار كود تحقق — يعتمد على نوع وجهة الحملة (سوشال، موقع، متجر…) */
@@ -1279,6 +1286,32 @@ async function createUserWithPortalToken(payload) {
 
 function makeVerificationCode() {
   return `RW-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
+/** التحقق من معرّف طلب عميل قبل ربطه بحملة */
+async function resolveLinkedClientServiceRequestId(rawId, targetUserIdOpt) {
+  const s = rawId != null ? String(rawId).trim() : '';
+  if (!s) return { ok: true, value: null };
+  if (!mongoose.isValidObjectId(s)) {
+    return { ok: false, error: 'معرّف طلب العميل المرتبط غير صالح' };
+  }
+  const csr = await ClientServiceRequest.findById(s).select('userId phone').lean();
+  if (!csr) return { ok: false, error: 'طلب العميل المرجَع غير موجود' };
+  if (targetUserIdOpt && mongoose.isValidObjectId(targetUserIdOpt)) {
+    const tu = String(targetUserIdOpt);
+    if (csr.userId && String(csr.userId) !== tu) {
+      return { ok: false, error: 'طلب العميل المرتبط لا يخص المشترك المستهدَف في الحملة' };
+    }
+    if (!csr.userId) {
+      const u = await User.findById(tu).select('phone').lean();
+      const pn = String(u?.phone || '').trim();
+      const crp = String(csr.phone || '').trim();
+      if (pn && crp && pn !== crp) {
+        return { ok: false, error: 'طلب العميل المرتبط لا يطابق جوال المشترك المستهدَف' };
+      }
+    }
+  }
+  return { ok: true, value: s };
 }
 
 async function createCampaignWithPortalToken(payload) {
@@ -2710,6 +2743,24 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
 
     const linkClicksTotal = await LinkClick.countDocuments({ campaignId: c._id });
 
+    let linkedClientServiceRequestId = '';
+    let linkedClientServiceRequestSummaryAr = '';
+    if (c.linkedClientServiceRequestId) {
+      linkedClientServiceRequestId = String(c.linkedClientServiceRequestId);
+      const csr = await ClientServiceRequest.findById(c.linkedClientServiceRequestId)
+        .select('title details fulfillmentStatus createdAt')
+        .lean();
+      if (csr) {
+        const dt = csr.createdAt ? new Date(csr.createdAt).toLocaleDateString('ar-SA') : '';
+        const titleLine = String(csr.title || '').trim() || String(csr.details || '').trim().slice(0, 80);
+        const statusMap = { pending: 'قيد المعالجة', completed: 'تم التنفيذ', cancelled: 'ملغاة' };
+        const st = statusMap[csr.fulfillmentStatus] || csr.fulfillmentStatus || '';
+        linkedClientServiceRequestSummaryAr = [titleLine ? `«${titleLine}»` : '', dt ? `تاريخ الطلب: ${dt}` : '', st ? `حالة الطلب: ${st}` : '']
+          .filter(Boolean)
+          .join(' — ');
+      }
+    }
+
     const bk = c.billingKind || 'unspecified';
     const billingKindAr =
       bk === 'paid' ? 'مدفوعة (بحسب تصنيف المنصة)' : bk === 'free' ? 'مجانية أو شراكة غير مدفوعة' : 'غير محدد — للتوضيح مع فريق المنصة';
@@ -2725,6 +2776,8 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
         destinationKind: c.destinationKind || 'social',
         billingKind: bk,
         billingKindAr,
+        linkedClientServiceRequestId,
+        linkedClientServiceRequestSummaryAr,
       },
       stats: {
         linkClicksTotal,
@@ -2885,6 +2938,7 @@ app.post('/api/campaigns', async (req, res) => {
       billingKind: bkIn,
       pointsPerInteraction: ppiIn,
       targetUserId: targetUserIdRaw,
+      linkedClientServiceRequestId: linkedReqRaw,
     } = req.body;
     const kinds = ['social', 'website', 'store', 'other'];
     const dk = kinds.includes(destinationKind) ? destinationKind : 'social';
@@ -2912,6 +2966,9 @@ app.post('/api/campaigns', async (req, res) => {
       targetUserId = tuid;
     }
 
+    const linkedResolved = await resolveLinkedClientServiceRequestId(linkedReqRaw, targetUserId);
+    if (!linkedResolved.ok) return res.status(400).json({ error: linkedResolved.error });
+
     const statusRaw = req.body?.status;
     const status =
       statusRaw && ['active', 'completed'].includes(String(statusRaw).trim())
@@ -2932,6 +2989,7 @@ app.post('/api/campaigns', async (req, res) => {
       status,
       pointsPerInteraction: pointsPerInteraction != null ? pointsPerInteraction : undefined,
       ...(targetUserId ? { targetUserId } : {}),
+      ...(linkedResolved.value ? { linkedClientServiceRequestId: linkedResolved.value } : {}),
     });
     res.status(201).json({ ok: true, campaign });
   } catch (err) {
@@ -3020,6 +3078,24 @@ app.patch('/api/campaigns/:campaignId', async (req, res) => {
         }
         $set.targetUserId = tuid;
       }
+    }
+
+    if ('linkedClientServiceRequestId' in body) {
+      const raw = body.linkedClientServiceRequestId;
+      const linkRaw = raw != null && String(raw).trim() ? String(raw).trim() : '';
+      let tuForLink;
+      if ('targetUserId' in body) {
+        const tr = body.targetUserId;
+        const tuid = tr != null && String(tr).trim() ? String(tr).trim() : '';
+        tuForLink = tuid || undefined;
+      } else {
+        const campLean = await Campaign.findById(campaignId).select('targetUserId').lean();
+        tuForLink = campLean?.targetUserId ? String(campLean.targetUserId) : undefined;
+      }
+      const resolved = await resolveLinkedClientServiceRequestId(linkRaw || null, tuForLink);
+      if (!resolved.ok) return res.status(400).json({ error: resolved.error });
+      if (resolved.value) $set.linkedClientServiceRequestId = resolved.value;
+      else $unset.linkedClientServiceRequestId = '';
     }
 
     const mongoUp = {};

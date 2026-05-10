@@ -1057,6 +1057,14 @@
               <strong>جميع أنواع الخدمة:</strong> للزيارة أو الإعجاب أو التعليق أو زيارة موقع/متجر، ضع في «الرابط» عنوان المنشور أو الصفحة أو النطاق (يفضّل أن يبدأ بـ <code dir="ltr">https://</code>)؛ في «حسابي» يظهر للمشارك زر يفتح هذه الوجهة مع نص يناسب نوع التفاعل.
               <strong>المتابعة:</strong> إن كان الهدف متابعة <strong>مشترك مسجّل</strong> دون رابط كامل، الصق معرّفه هنا؛ يُستخدم حسابه على المنصة عند غياب رابط <code dir="ltr">https://</code>.
             </p>
+            <input type="hidden" id="cLinkedClientServiceRequestId" value="" autocomplete="off" />
+            <p id="cLinkedCrPreview" class="hint" style="margin-top:0.35rem;display:none;margin-bottom:0">
+              <strong>مرجع طلب عميل (يُعرَض في صفحة تتبع الحملة):</strong>
+              <span id="cLinkedCrPreviewId" class="mono" dir="ltr"></span>
+            </p>
+            <button type="button" class="secondary small" id="btnClearLinkedClientRequest" style="margin-top:0.35rem;display:none">
+              إزالة ربط طلب العميل
+            </button>
           </div>
           <div style="grid-column:1/-1">
             <label for="cBillingKind">التصنيف التجاري (مدفوعة / مجانية)</label>
@@ -1288,6 +1296,9 @@
         document.getElementById('cPointsPerInteraction').value =
           ppi != null && Number.isFinite(Number(ppi)) ? String(Math.floor(Number(ppi))) : '';
         document.getElementById('cTargetUserId').value = c.targetUserId ? String(c.targetUserId) : '';
+        const lcr = document.getElementById('cLinkedClientServiceRequestId');
+        if (lcr) lcr.value = c.linkedClientServiceRequestId ? String(c.linkedClientServiceRequestId) : '';
+        updateLinkedClientRequestCampaignUi();
         updateCampEditUi();
         showDashPage('campaign-new');
         showFlash(flash, 'تم تحميل الحملة للتعديل — راجع الحقول ثم «حفظ التعديلات».', true);
@@ -2381,7 +2392,7 @@
                 const uidRaw = String(row.userId || '').trim();
                 const reqTitleShort = String(row.title || '').trim().slice(0, 200);
                 const prepCampaignCell = uidRaw
-                  ? `<button type="button" class="small secondary cr-prep-campaign-btn" data-user-id="${escapeHtml(uidRaw)}" data-req-title="${escapeHtml(reqTitleShort)}">تحضير حملة</button>`
+                  ? `<button type="button" class="small secondary cr-prep-campaign-btn" data-cr-request-id="${escapeHtml(row.id)}" data-user-id="${escapeHtml(uidRaw)}" data-req-title="${escapeHtml(reqTitleShort)}">تحضير حملة</button>`
                   : `<span style="color:var(--muted);font-size:0.76rem;max-width:6rem;display:inline-block" title="الطلب غير مربوط بمستخدم في المنصة؛ أنشئ المشترك أو اطلب الخدمة من «حسابي» ليُربط الطلب تلقائياً.">غير مربوط</span>`;
                 const fst = row.fulfillmentStatus || 'pending';
                 const fstAr = row.fulfillmentStatusAr || 'قيد المعالجة';
@@ -2638,6 +2649,31 @@
       }
     });
 
+    function updateLinkedClientRequestCampaignUi() {
+      const hid = document.getElementById('cLinkedClientServiceRequestId');
+      const preview = document.getElementById('cLinkedCrPreview');
+      const previewId = document.getElementById('cLinkedCrPreviewId');
+      const btn = document.getElementById('btnClearLinkedClientRequest');
+      const v = hid && hid.value ? hid.value.trim() : '';
+      if (preview && previewId && btn) {
+        if (v) {
+          preview.style.display = 'block';
+          previewId.textContent = v;
+          btn.style.display = 'inline-block';
+        } else {
+          preview.style.display = 'none';
+          previewId.textContent = '';
+          btn.style.display = 'none';
+        }
+      }
+    }
+
+    document.getElementById('btnClearLinkedClientRequest')?.addEventListener('click', () => {
+      const hid = document.getElementById('cLinkedClientServiceRequestId');
+      if (hid) hid.value = '';
+      updateLinkedClientRequestCampaignUi();
+    });
+
     document.getElementById('clientRequestsBody').addEventListener('click', async (ev) => {
       const prepBtn = ev.target.closest('.cr-prep-campaign-btn');
       if (prepBtn) {
@@ -2660,11 +2696,15 @@
           const hint = reqTitle.trim() ? `متابعة طلب عميل: ${reqTitle.trim()}` : 'حملة مرتبطة بطلب عميل';
           titleEl.value = hint.slice(0, 180);
         }
+        const linkedCr = document.getElementById('cLinkedClientServiceRequestId');
+        const crReqId = prepBtn.getAttribute('data-cr-request-id');
+        if (linkedCr) linkedCr.value = crReqId ? crReqId.trim() : '';
+        updateLinkedClientRequestCampaignUi();
         showDashPage('campaign-new');
         document.getElementById('sec-campaign')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         showFlash(
           document.getElementById('campFlash'),
-          'تم تعبئة «معرّف مشترك مستهدَف» من صف الطلب. أكمل رابط الحملة والمدينة والاهتمام ثم أنشئ الحملة.',
+          'تم تعبئة «معرّف مشترك مستهدَف» و«مرجع طلب العميل» من صف الطلب. أكمل رابط الحملة والمدينة والاهتمام ثم أنشئ الحملة.',
           true
         );
         return;
@@ -2754,6 +2794,9 @@
     document.getElementById('btnCampCancelEdit')?.addEventListener('click', () => {
       clearCampaignEditMode();
       document.getElementById('formCampaign')?.reset();
+      const lc = document.getElementById('cLinkedClientServiceRequestId');
+      if (lc) lc.value = '';
+      updateLinkedClientRequestCampaignUi();
       const ct = document.getElementById('cTarget');
       if (ct) ct.value = '10';
       const st = document.getElementById('cStatus');
@@ -2777,6 +2820,7 @@
       const dealSummary = document.getElementById('cDealSummary').value.trim();
       const ppiRaw = document.getElementById('cPointsPerInteraction').value.trim();
       const targetUserId = document.getElementById('cTargetUserId').value.trim();
+      const linkedClientServiceRequestId = document.getElementById('cLinkedClientServiceRequestId')?.value.trim() || '';
       const status = document.getElementById('cStatus').value;
       try {
         const payload = {
@@ -2795,6 +2839,7 @@
         if (editId) {
           payload.pointsPerInteraction = ppiRaw ? Number(ppiRaw) : null;
           payload.targetUserId = targetUserId || '';
+          payload.linkedClientServiceRequestId = linkedClientServiceRequestId;
           await req(`/api/campaigns/${encodeURIComponent(editId)}`, {
             method: 'PATCH',
             body: JSON.stringify(payload),
@@ -2802,11 +2847,15 @@
           showFlash(flash, 'تم حفظ تعديلات الحملة.', true);
           clearCampaignEditMode();
           document.getElementById('formCampaign').reset();
+          const lc = document.getElementById('cLinkedClientServiceRequestId');
+          if (lc) lc.value = '';
+          updateLinkedClientRequestCampaignUi();
           document.getElementById('cTarget').value = '10';
           document.getElementById('cStatus').value = 'active';
         } else {
           if (ppiRaw) payload.pointsPerInteraction = Number(ppiRaw);
           if (targetUserId) payload.targetUserId = targetUserId;
+          if (linkedClientServiceRequestId) payload.linkedClientServiceRequestId = linkedClientServiceRequestId;
           const data = await req('/api/campaigns', {
             method: 'POST',
             body: JSON.stringify(payload),

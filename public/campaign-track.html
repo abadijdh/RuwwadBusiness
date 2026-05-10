@@ -395,12 +395,25 @@
             tgt != null && Number.isFinite(tgt) ? `${cur} / ${tgt}` : String(cur);
           document.getElementById('statClicks').textContent = String(data.stats?.linkClicksTotal ?? 0);
 
+          const csrIdRaw =
+            c.linkedClientServiceRequestId != null && String(c.linkedClientServiceRequestId).trim()
+              ? String(c.linkedClientServiceRequestId).trim()
+              : '';
+          const csrSumRaw =
+            c.linkedClientServiceRequestSummaryAr != null && String(c.linkedClientServiceRequestSummaryAr).trim()
+              ? String(c.linkedClientServiceRequestSummaryAr).trim()
+              : '';
+          const csrBlock = csrIdRaw
+            ? `<div style="grid-column:1/-1;padding-top:0.45rem;margin-top:0.35rem;border-top:1px solid rgba(255,255,255,0.12)"><strong>مرجع طلب عميل:</strong> <span class="mono" dir="ltr">${escapeHtml(csrIdRaw)}</span>${csrSumRaw ? `<div style="margin-top:0.4rem;font-size:0.92rem;line-height:1.45;color:rgba(255,255,255,0.82)">${escapeHtml(csrSumRaw)}</div>` : ''}</div>`
+            : '';
+
           document.getElementById('kvGrid').innerHTML = `
             <div><strong>العنوان:</strong> ${escapeHtml(c.title || '—')}</div>
             <div><strong>حالة الحملة:</strong> ${statusAr(c.status)}</div>
             <div><strong>التصنيف التجاري:</strong> ${escapeHtml(c.billingKindAr || '—')}</div>
             <div><strong>نوع التفاعل المطلوب:</strong> ${escapeHtml(campaignTypeAr(c.interactionType))}</div>
             <div><strong>وجهة الحملة:</strong> ${escapeHtml(destinationKindAr(c.destinationKind))}</div>
+            ${csrBlock}
           `;
           document.getElementById('disc').textContent = data.disclaimer || '';
         } catch {
