@@ -1549,6 +1549,15 @@ function resolvedPublicBaseUrl(req) {
   return `${proto}://${h}`;
 }
 
+/** رابط لوحة الطاقم مع فتح تبويب «طلبات العملاء» — يُستخدم من صفحة تتبع الحملة عند وجود مرجع طلب */
+function teamPanelRequestsPageUrl(req) {
+  const base = resolvedPublicBaseUrl(req).replace(/\/+$/, '');
+  if (TEAM_PANEL_SECRET_PATH) {
+    return `${base}/${TEAM_PANEL_SECRET_PATH}#requests`;
+  }
+  return `${base}/#requests`;
+}
+
 function requireMongo(req, res, next) {
   if (!MONGO_URI) {
     return res.status(503).json({
@@ -2765,7 +2774,7 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
     const billingKindAr =
       bk === 'paid' ? 'مدفوعة (بحسب تصنيف المنصة)' : bk === 'free' ? 'مجانية أو شراكة غير مدفوعة' : 'غير محدد — للتوضيح مع فريق المنصة';
 
-    res.json({
+    const payload = {
       ok: true,
       campaign: {
         title: c.title || '',
@@ -2784,7 +2793,11 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
       },
       disclaimer:
         'التقدّم يعتمد على تسجيل المشاركات في منصة «رواد الأعمال» وعلى ضغطات رابط التتبع؛ لا يثبت ذلك وحده كل تفاعل على شبكة خارجية أو متجر بدون تكامل إضافي.',
-    });
+    };
+    if (linkedClientServiceRequestId) {
+      payload.teamPanelRequestsUrl = teamPanelRequestsPageUrl(req);
+    }
+    res.json(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

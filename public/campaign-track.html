@@ -403,8 +403,16 @@
             c.linkedClientServiceRequestSummaryAr != null && String(c.linkedClientServiceRequestSummaryAr).trim()
               ? String(c.linkedClientServiceRequestSummaryAr).trim()
               : '';
+          const panelUrl =
+            data.teamPanelRequestsUrl != null && String(data.teamPanelRequestsUrl).trim()
+              ? String(data.teamPanelRequestsUrl).trim()
+              : '';
+          const panelSection =
+            csrIdRaw && panelUrl
+              ? `<div style="margin-top:0.65rem"><a class="btn-back-account" href="${escapeHtml(panelUrl)}" target="_blank" rel="noopener noreferrer">مراجعة الطلب في لوحة التحكم</a></div><p style="margin-top:0.45rem;font-size:0.84rem;color:var(--muted);line-height:1.5">يفتح تبويب «طلبات العملاء». قد يُطلب منك تسجيل دخول فريق المنصة إن كان مفعّلاً.</p>`
+              : '';
           const csrBlock = csrIdRaw
-            ? `<div style="grid-column:1/-1;padding-top:0.45rem;margin-top:0.35rem;border-top:1px solid rgba(255,255,255,0.12)"><strong>مرجع طلب عميل:</strong> <span class="mono" dir="ltr">${escapeHtml(csrIdRaw)}</span>${csrSumRaw ? `<div style="margin-top:0.4rem;font-size:0.92rem;line-height:1.45;color:rgba(255,255,255,0.82)">${escapeHtml(csrSumRaw)}</div>` : ''}</div>`
+            ? `<div style="grid-column:1/-1;padding-top:0.45rem;margin-top:0.35rem;border-top:1px solid rgba(255,255,255,0.12)"><strong>مرجع طلب عميل:</strong> <span class="mono" dir="ltr">${escapeHtml(csrIdRaw)}</span>${csrSumRaw ? `<div style="margin-top:0.4rem;font-size:0.92rem;line-height:1.45;color:rgba(255,255,255,0.82)">${escapeHtml(csrSumRaw)}</div>` : ''}${panelSection}</div>`
             : '';
 
           document.getElementById('kvGrid').innerHTML = `
