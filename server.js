@@ -45,6 +45,12 @@ function sanitizeTeamPanelSecretPath(raw) {
 const TEAM_PANEL_SECRET_PATH = sanitizeTeamPanelSecretPath(process.env.TEAM_PANEL_SECRET_PATH);
 const TEAM_PANEL_PASSWORD = String(process.env.TEAM_PANEL_PASSWORD || '').trim();
 
+if (!TEAM_PANEL_PASSWORD) {
+  console.warn(
+    '[WARN] TEAM_PANEL_PASSWORD غير مضبوط: لوحة الطاقم متاحة دون تسجيل دخول ومسارات /api الإدارية غير محمية. عيّن TEAM_PANEL_PASSWORD في Render قبل الإنتاج.'
+  );
+}
+
 const TEAM_GATE_COOKIE = 'team_gate';
 const TEAM_GATE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const teamGateSessions = new Map();
@@ -153,8 +159,7 @@ function teamPanelApiProtection(req, res, next) {
   next();
 }
 
-app.use(express.static(publicDir, { index: false }));
-
+/** لوحة الطاقم قبل express.static حتى لا يُخدم ملفا team.html / index.html علناً دون التحقق من team_gate */
 app.get('/', (_req, res) => {
   if (TEAM_PANEL_SECRET_PATH) return res.redirect(302, '/join');
   serveTeamDashboardHtml(_req, res);
@@ -174,6 +179,8 @@ app.get('/team.html', (req, res) => {
   if (TEAM_PANEL_SECRET_PATH) return res.redirect(302, '/' + TEAM_PANEL_SECRET_PATH);
   serveTeamDashboardHtml(req, res);
 });
+
+app.use(express.static(publicDir, { index: false }));
 
 /** شعار المنصة — ملف واحد يُخزَّن تحت /uploads/branding ويُعرَض في لوحة الفريق وصفحة الاشتراك */
 const BRANDING_UPLOAD_DIR = path.join(__dirname, 'public', 'uploads', 'branding');
@@ -1549,15 +1556,6 @@ function resolvedPublicBaseUrl(req) {
   return `${proto}://${h}`;
 }
 
-/** رابط لوحة الطاقم مع فتح تبويب «طلبات العملاء» — يُستخدم من صفحة تتبع الحملة عند وجود مرجع طلب */
-function teamPanelRequestsPageUrl(req) {
-  const base = resolvedPublicBaseUrl(req).replace(/\/+$/, '');
-  if (TEAM_PANEL_SECRET_PATH) {
-    return `${base}/${TEAM_PANEL_SECRET_PATH}#requests`;
-  }
-  return `${base}/#requests`;
-}
-
 function requireMongo(req, res, next) {
   if (!MONGO_URI) {
     return res.status(503).json({
@@ -1707,8 +1705,15 @@ app.get('/api/portal/logout', (req, res) => {
 });
 
 /** تتبع حملة لصاحب العلامة — الرمز السري في Query ?t= */
-app.get('/campaign-track', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'campaign-track.html'));
+const campaignTrackHtmlPath = path.join(__dirname, 'public', 'campaign-track.html');
+function sendCampaignTrackHtml(res) {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.sendFile(campaignTrackHtmlPath);
+}
+app.get(['/campaign-track', '/campaign-track.html'], (_req, res) => {
+  sendCampaignTrackHtml(res);
 });
 
 /**
@@ -2794,9 +2799,6 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
       disclaimer:
         'التقدّم يعتمد على تسجيل المشاركات في منصة «رواد الأعمال» وعلى ضغطات رابط التتبع؛ لا يثبت ذلك وحده كل تفاعل على شبكة خارجية أو متجر بدون تكامل إضافي.',
     };
-    if (linkedClientServiceRequestId) {
-      payload.teamPanelRequestsUrl = teamPanelRequestsPageUrl(req);
-    }
     res.json(payload);
   } catch (err) {
     res.status(500).json({ error: err.message });
