@@ -488,7 +488,7 @@
               <div id="svcOptionsHost" class="svc-host" aria-label="أنواع الخدمات"></div>
               <div id="svcPricingTotals" hidden></div>
               <p class="hint" style="margin-top:0.35rem;margin-bottom:0;font-size:0.78rem;line-height:1.55">
-                اضغط عنوان كل منصة لعرض الخدمات أو إخفائها. إن نقصت خدمات في القائمة راجع لوحة الفريق (كل الخدمات أو تحديد كل الصفوف المطلوبة).
+                اضغط عنوان كل منصة لعرض الخدمات أو إخفائها. إن نقصت خدمات من القائمة تواصل مع المنصة.
               </p>
             </div>
             <div class="sr-span-full">
@@ -498,7 +498,7 @@
             <div class="sr-span-full">
               <label for="srPortal">ربط بطلبك في «حسابي» (اختياري)</label>
               <input id="srPortal" dir="ltr" style="text-align:left" placeholder="اختياري — رابط حسابي أو رمز ?t= أو اتركه فارغاً (يمكن للعميل الدخول لاحقاً برقم جواله من صفحة حسابي)" autocomplete="off" spellcheck="false" />
-              <span class="hint-small" style="display:block;margin-top:0.35rem">يساعد الفريق على مطابقة طلبك مع اشتراكك إن وُجد؛ أو يكفي رقم الجوال أعلاه مع الدخول برمز تحقق من صفحة حسابي.</span>
+              <span class="hint-small" style="display:block;margin-top:0.35rem">يساعد الفريق على مطابقة طلبك مع اشتراكك إن وُجد؛ أو يكفي رقم الجوال أعلاه مع الدخول برمز تحقق من صفحة حسابي. إن وُجد تقدير نقاط من جدول الكمية وأنت مرتبطاً بحساب، يجب أن يكفي رصيد نقاطك المجموع ليقبل الطلب.</span>
             </div>
           </div>
           <div class="cta-row">
@@ -896,7 +896,7 @@
         return;
       }
       panel.hidden = false;
-      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصات المعروضة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.76rem">(لا يُخصم من الرصيد تلقائياً)</span>`;
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصات المعروضة)</strong> · ${totalSar} ر.س · نقاط ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.76rem">(إذا أرفقت رابط «حسابي» يُشترط أن يغطي رصيد نقاطك هذا المجموع ليقبل الطلب)</span>`;
     }
 
     function showFlash(ok, msg) {

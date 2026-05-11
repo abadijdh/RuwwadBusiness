@@ -570,7 +570,7 @@ async function getEnabledClientServiceIdFilterSet() {
 }
 
 const QTY_PRICING_NOTE_AR =
-  'تقدير الكمية (إنستغرام أو تويتر/إكس أو تيك توك أو سناب شات حسب الخيار): السعر ≈ (الكمية÷1000)×سعر الألف بالجدول؛ نقاط مقترحة للاستبدال = ⌈الكمية÷2⌉ (لا يُخصم تلقائياً من الرصيد حتى يعتمدها الفريق).';
+  'تقدير الكمية (إنستغرام أو تويتر/إكس أو تيك توك أو سناب شات حسب الخيار): السعر ≈ (الكمية÷1000)×سعر الألف بالجدول؛ نقاط = ⌈الكمية÷2⌉. عند الإرسال مرتبطاً بحساب «حسابي» يُشترط ألا يقل الرصيد عن مجموع النقاط؛ التنفيذ بتوافق الفريق.';
 
 function normalizeServiceQuantitiesBody(raw) {
   const out = {};
@@ -683,11 +683,47 @@ function effectiveCampaignPoints(campaign) {
   return n;
 }
 
+/**
+ * @param {unknown} raw
+ * @returns {{ ok: true, value: number | null } | { ok: false, error: string }}
+ */
+function parseSubscriberPointsCostInput(raw) {
+  if (raw == null || String(raw).trim() === '') return { ok: true, value: null };
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n) || n < 1 || n > 100000) {
+    return {
+      ok: false,
+      error: 'قيمة الحملة كنقاط يجب أن تكون عدداً صحيحاً بين 1 و 100000 أو فارغاً (بدون خصم)',
+    };
+  }
+  return { ok: true, value: n };
+}
+
+/** نقاط تُخصم من رصيد المشترك عند كل تسجيل مشاركة — 0 إن لم تُضبط */
+function effectiveCampaignSubscriberCost(campaign) {
+  if (!campaign || campaign.subscriberPointsCost == null) return 0;
+  const n = Math.floor(Number(campaign.subscriberPointsCost));
+  if (!Number.isFinite(n) || n < 1) return 0;
+  return Math.min(n, 100000);
+}
+
 /** نقاط مُسجَّلة مع التفاعل (أو الافتراضي القديم للصفوف قبل الإصدارات التي تحفظ pointsAwarded) */
 function interactionPointsStored(row) {
   const stored = row.pointsAwarded;
   if (stored != null && Number.isFinite(Number(stored))) return Math.floor(Number(stored));
   return POINTS_PER_INTERACTION;
+}
+
+/** نقاط خُصمت من المشترك عند التسجيل (صفوف قديمة بلا الحقل = 0) */
+function interactionPointsCharged(row) {
+  const v = row.pointsCharged;
+  if (v != null && Number.isFinite(Number(v))) return Math.max(0, Math.floor(Number(v)));
+  return 0;
+}
+
+/** صافي تغيّر الرصيد من سجل تفاعل: مكافأة − خصم */
+function interactionPointsNetDelta(row) {
+  return interactionPointsStored(row) - interactionPointsCharged(row);
 }
 
 const siteSettingsSchema = new mongoose.Schema(
@@ -1105,6 +1141,11 @@ const campaignSchema = new mongoose.Schema({
    * نقاط يمنحها الفريق للمشترك عن كل مشاركة موثّقة في هذه الحملة (فراغ أو غير صالح = المنصة الافتراضية).
    */
   pointsPerInteraction: { type: Number, default: null },
+  /**
+   * قيمة الحملة كنقاط — تُخصم من رصيد المشترك عند كل «تسجيل مشاركة» ناجح إذا كان رصيده يكفي.
+   * لا علاقة لها بتصنيف paid/free؛ فارغ أو غير صالح = لا خصم.
+   */
+  subscriberPointsCost: { type: Number, default: null },
   /** رمز سري لصفحة تتبع صاحب الحملة — لا يُشارك علناً */
   campaignPortalToken: { type: String, trim: true, sparse: true, unique: true },
   /**
@@ -1147,6 +1188,8 @@ const interactionSchema = new mongoose.Schema(
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', required: true },
     /** لقطعة ثابتة وقت التسجيل — لا تتغير إذا عدّلتم نقاط الحملة لاحقاً */
     pointsAwarded: { type: Number, default: null },
+    /** نقاط خُصمت من المشترك وقت التسجيل (قيمة الحملة) — لاسترجاعها عند حذف الحملة */
+    pointsCharged: { type: Number, default: null },
   },
   { timestamps: true }
 );
@@ -2197,6 +2240,23 @@ app.post('/api/client/service-requests', async (req, res) => {
       return res.status(400).json({ error: pricingBuild.error });
     }
 
+    const ptsNeedRaw = pricingBuild.estimatedTotalPoints;
+    const ptsNeed =
+      ptsNeedRaw != null && Number.isFinite(Number(ptsNeedRaw)) ? Math.floor(Number(ptsNeedRaw)) : 0;
+
+    if (linkedViaPortal && userId && ptsNeed > 0) {
+      const balRow = await User.findById(userId).select('points').lean();
+      const bal = balRow ? Math.max(0, Math.floor(Number(balRow.points ?? 0))) : 0;
+      if (bal < ptsNeed) {
+        return res.status(400).json({
+          error: `رصيد نقاطك الحالي (${bal}) لا يكفي لتقدير هذا الطلب (${ptsNeed} نقطة — ⌈كمية÷2⌉ لكل بند في جدول الكمية). خفّف الكميات أو زد رصيدك من المشاركات أو مكافآت الفريق ثم أعد المحاولة.`,
+          code: 'INSUFFICIENT_POINTS_BALANCE',
+          balancePoints: bal,
+          requiredPoints: ptsNeed,
+        });
+      }
+    }
+
     const persistedQty = {};
     for (const line of pricingBuild.lines) {
       persistedQty[line.serviceId] = line.quantity;
@@ -2519,6 +2579,8 @@ app.get('/api/portal/summary', async (req, res) => {
       campaignBillingKind: row.campaignId?.billingKind || '',
       campaignBillingHintAr: campaignBillingSubscriberHintAr(row.campaignId?.billingKind),
       pointsEarned: interactionPointsStored(row),
+      pointsCharged: interactionPointsCharged(row),
+      pointsNet: interactionPointsNetDelta(row),
       createdAt: row.createdAt,
     }));
 
@@ -2564,13 +2626,17 @@ app.get('/api/portal/summary', async (req, res) => {
       const camp = row.campaignId;
       const title = camp?.title || '—';
       const typeAr = campaignInteractionTypeAr(camp?.type);
+      const charged = interactionPointsCharged(row);
+      const net = interactionPointsNetDelta(row);
       portalActivities.push({
         id: `interaction:${String(row._id)}`,
         at: row.createdAt,
-        bucketAr: 'مشاركة (مجانية لك)',
+        bucketAr: charged > 0 ? 'مشاركة' : 'مشاركة (مجانية لك)',
         headlineAr: 'تسجيل تفاعل في حملة',
-        detailAr: `${title} · ${typeAr} · ${campaignBillingSubscriberHintAr(camp?.billingKind)}`,
-        pointsDelta: interactionPointsStored(row),
+        detailAr:
+          `${title} · ${typeAr} · ${campaignBillingSubscriberHintAr(camp?.billingKind)}` +
+          (charged > 0 ? ` — خُصم ${charged} نقطة (قيمة الحملة)` : ''),
+        pointsDelta: net,
         amountSar: null,
       });
     }
@@ -2617,7 +2683,7 @@ app.get('/api/portal/summary', async (req, res) => {
         sr.estimatedTotalPoints != null &&
         Number(sr.estimatedTotalPoints) > 0
       ) {
-        pricingExtra = `تقدير الكمية (حسب المنصة في الجدول): ~${sr.estimatedTotalSar} ر.س؛ نقاط مقترحة ⌈كمية÷2⌉ = ${sr.estimatedTotalPoints} نقطة — لا يُخصم من رصيدك حتى يعتمد الفريق التنفيذ.`;
+        pricingExtra = `تقدير الكمية (حسب المنصة في الجدول): ~${sr.estimatedTotalSar} ر.س؛ نقاط ⌈كمية÷2⌉ = ${sr.estimatedTotalPoints} — عند الطلب من «حسابي» كان قبول الطلب يشترط رصيداً لا يقل عن مجموع النقاط؛ التنفيذ النهائي بتوافق الفريق.`;
       }
       const statusAr = clientServiceFulfillmentLabelAr(sr.fulfillmentStatus);
       const detailAr = [
@@ -2952,6 +3018,7 @@ app.post('/api/campaigns', async (req, res) => {
       dealSummary,
       billingKind: bkIn,
       pointsPerInteraction: ppiIn,
+      subscriberPointsCost: subCostIn,
       targetUserId: targetUserIdRaw,
       linkedClientServiceRequestId: linkedReqRaw,
     } = req.body;
@@ -2966,6 +3033,8 @@ app.post('/api/campaigns', async (req, res) => {
     const parsedPpi = parsePointsPerInteractionInput(ppiIn);
     if (!parsedPpi.ok) return res.status(400).json({ error: parsedPpi.error });
     const pointsPerInteraction = parsedPpi.value;
+    const parsedSubCost = parseSubscriberPointsCostInput(subCostIn);
+    if (!parsedSubCost.ok) return res.status(400).json({ error: parsedSubCost.error });
 
     let targetUserId = null;
     const tuid =
@@ -3003,6 +3072,9 @@ app.post('/api/campaigns', async (req, res) => {
       billingKind,
       status,
       pointsPerInteraction: pointsPerInteraction != null ? pointsPerInteraction : undefined,
+      ...(parsedSubCost.value != null && parsedSubCost.value > 0
+        ? { subscriberPointsCost: parsedSubCost.value }
+        : {}),
       ...(targetUserId ? { targetUserId } : {}),
       ...(linkedResolved.value ? { linkedClientServiceRequestId: linkedResolved.value } : {}),
     });
@@ -3034,6 +3106,13 @@ app.patch('/api/campaigns/:campaignId', async (req, res) => {
       if (!parsed.ok) return res.status(400).json({ error: parsed.error });
       if (parsed.value == null) $unset.pointsPerInteraction = '';
       else $set.pointsPerInteraction = parsed.value;
+    }
+
+    if ('subscriberPointsCost' in body) {
+      const parsed = parseSubscriberPointsCostInput(body.subscriberPointsCost);
+      if (!parsed.ok) return res.status(400).json({ error: parsed.error });
+      if (parsed.value == null || parsed.value < 1) $unset.subscriberPointsCost = '';
+      else $set.subscriberPointsCost = parsed.value;
     }
 
     const kinds = ['social', 'website', 'store', 'other'];
@@ -3140,11 +3219,13 @@ app.delete('/api/campaigns/:campaignId', async (req, res) => {
     const cid = camp._id;
     const interactions = await Interaction.find({ campaignId: cid }).lean();
     for (const ix of interactions) {
+      if (!ix.userId) continue;
       const pts = interactionPointsStored(ix);
-      if (!pts || !ix.userId) continue;
+      const ch = interactionPointsCharged(ix);
+      if (!pts && !ch) continue;
       await User.collection.updateOne(
         { _id: ix.userId },
-        [{ $set: { points: { $max: [0, { $subtract: [{ $ifNull: ['$points', 0] }, pts] }] } } }]
+        [{ $set: { points: { $max: [0, { $add: [{ $subtract: [{ $ifNull: ['$points', 0] }, pts] }, ch] }] } } }]
       );
     }
     await Interaction.deleteMany({ campaignId: cid });
@@ -3192,11 +3273,35 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
   }
 
   const pts = effectiveCampaignPoints(campaign);
+  const cost = effectiveCampaignSubscriberCost(campaign);
+
+  if (cost > 0) {
+    const debited = await User.findOneAndUpdate(
+      { _id: userId, points: { $gte: cost } },
+      { $inc: { points: -cost } },
+      { new: false }
+    ).lean();
+    if (!debited) {
+      return {
+        ok: false,
+        status: 400,
+        message: `رصيد النقاط غير كافٍ — قيمة هذه الحملة ${cost} نقطة. راجع رصيدك في أعلى صفحة «حسابي» أو تواصل مع المنصة.`,
+      };
+    }
+  }
 
   let inserted;
   try {
-    inserted = await Interaction.create({ userId, campaignId, pointsAwarded: pts });
+    inserted = await Interaction.create({
+      userId,
+      campaignId,
+      pointsAwarded: pts,
+      ...(cost > 0 ? { pointsCharged: cost } : {}),
+    });
   } catch (err) {
+    if (cost > 0) {
+      await User.findByIdAndUpdate(userId, { $inc: { points: cost } }).catch(() => {});
+    }
     if (err && err.code === 11000) {
       return { ok: false, status: 400, message: 'سبق التسجيل في هذه الحملة لهذا المستخدم' };
     }
@@ -3207,6 +3312,7 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
     const userUpdate = await User.findByIdAndUpdate(userId, { $inc: { points: pts } });
     if (!userUpdate) {
       await Interaction.deleteOne({ _id: inserted._id });
+      if (cost > 0) await User.findByIdAndUpdate(userId, { $inc: { points: cost } });
       return { ok: false, status: 400, message: 'المستخدم غير موجود' };
     }
     campaign.currentCount += 1;
@@ -3216,10 +3322,15 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
     await campaign.save();
   } catch (err) {
     await Interaction.deleteOne({ _id: inserted._id });
+    if (cost > 0) await User.findByIdAndUpdate(userId, { $inc: { points: cost } });
     throw err;
   }
 
-  return { ok: true, message: `تم التسجيل (+${pts} نقاط)` };
+  let msg =
+    cost > 0
+      ? `تم التسجيل — خُصم ${cost} نقطة (قيمة الحملة) ثم إضافة مكافأة +${pts} نقطة.`
+      : `تم التسجيل (+${pts} نقاط)`;
+  return { ok: true, message: msg };
 }
 
 function portalCampaignDestinationAr(kind) {
@@ -3303,6 +3414,7 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
       recommended: campaignMatchesAudience(c),
       billingHintAr: campaignBillingSubscriberHintAr(c.billingKind),
       pointsAwarded: effectiveCampaignPoints(c),
+      subscriberPointsCost: effectiveCampaignSubscriberCost(c),
     }));
 
     rows.sort((a, b) => Number(b.recommended) - Number(a.recommended));

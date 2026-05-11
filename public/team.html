@@ -1039,9 +1039,12 @@
             </select>
           </div>
           <div>
-            <label for="cPointsPerInteraction">نقاط المشترك عند كل مشاركة موثّقة</label>
+            <label for="cPointsPerInteraction">نقاط المشترك عند كل مشاركة موثّقة (مكافأة تُضاف للرصيد)</label>
             <input id="cPointsPerInteraction" type="number" min="1" max="100000" step="1" placeholder="فارغ = افتراضي المنصة (10)" dir="ltr" style="text-align:left" />
             <p class="hint" style="margin-top:0.35rem;margin-bottom:0">اتركه فارغاً لاستخدام الافتراضي (<strong>10</strong> نقاط). رقم خاص بهذه الحملة إن اختلف الأجر.</p>
+            <label for="cSubscriberPointsCost" style="margin-top:0.65rem">قيمة الحملة كنقاط (تُخصم من رصيد المشترك عند تسجيل المشاركة)</label>
+            <input id="cSubscriberPointsCost" type="number" min="1" max="100000" step="1" placeholder="فارغ = بدون خصم من رصيد المشترك" dir="ltr" style="text-align:left" />
+            <p class="hint" style="margin-top:0.35rem;margin-bottom:0">إن عبّأتها: يُطلَب أن يكون رصيد المشترك كافياً قبل «تسجيل مشاركتي»؛ تُخصم القيمة ثم تُضاف المكافأة من الحقل أعلاه. لا يُخصم من صفحة تتبع الحملة.</p>
           </div>
           <div style="grid-column:1/-1">
             <label for="cLink">الرابط — وجهة المشاركة (جميع أنواع الخدمة)</label>
@@ -1295,6 +1298,14 @@
         const ppi = c.pointsPerInteraction;
         document.getElementById('cPointsPerInteraction').value =
           ppi != null && Number.isFinite(Number(ppi)) ? String(Math.floor(Number(ppi))) : '';
+        const spc = c.subscriberPointsCost;
+        const spcEl = document.getElementById('cSubscriberPointsCost');
+        if (spcEl) {
+          spcEl.value =
+            spc != null && Number.isFinite(Number(spc)) && Math.floor(Number(spc)) >= 1
+              ? String(Math.floor(Number(spc)))
+              : '';
+        }
         document.getElementById('cTargetUserId').value = c.targetUserId ? String(c.targetUserId) : '';
         const lcr = document.getElementById('cLinkedClientServiceRequestId');
         if (lcr) lcr.value = c.linkedClientServiceRequestId ? String(c.linkedClientServiceRequestId) : '';
@@ -2224,9 +2235,15 @@
               const hasCustomPpi =
                 pp != null && Number.isFinite(Number(pp)) && Math.floor(Number(pp)) >= 1;
               const ppiNum = hasCustomPpi ? Math.floor(Number(pp)) : null;
-              const ptsCell = hasCustomPpi
-                ? escapeHtml(String(ppiNum))
-                : `<span style="color:var(--muted)" title="الافتراضي">10</span>`;
+              const costRaw = c.subscriberPointsCost;
+              const hasCost =
+                costRaw != null && Number.isFinite(Number(costRaw)) && Math.floor(Number(costRaw)) >= 1;
+              const costNum = hasCost ? Math.floor(Number(costRaw)) : null;
+              const ptsCell =
+                `${hasCustomPpi ? escapeHtml(String(ppiNum)) : `<span style="color:var(--muted)" title="الافتراضي مكافأة">10</span>`}` +
+                (hasCost
+                  ? ` <span style="display:inline-block;margin-top:0.2rem;font-size:0.76rem;color:#fb7185" title="قيمة الحملة — خصم من رصيد المشترك عند التسجيل">خصم ${escapeHtml(String(costNum))}</span>`
+                  : '');
               const ppiDataCurrent = hasCustomPpi ? String(ppiNum) : '';
               return `
             <tr>
@@ -2819,6 +2836,7 @@
       const link = normalizeCampaignLink(document.getElementById('cLink').value);
       const dealSummary = document.getElementById('cDealSummary').value.trim();
       const ppiRaw = document.getElementById('cPointsPerInteraction').value.trim();
+      const subCostRaw = document.getElementById('cSubscriberPointsCost')?.value.trim() || '';
       const targetUserId = document.getElementById('cTargetUserId').value.trim();
       const linkedClientServiceRequestId = document.getElementById('cLinkedClientServiceRequestId')?.value.trim() || '';
       const status = document.getElementById('cStatus').value;
@@ -2838,6 +2856,7 @@
         };
         if (editId) {
           payload.pointsPerInteraction = ppiRaw ? Number(ppiRaw) : null;
+          payload.subscriberPointsCost = subCostRaw ? Number(subCostRaw) : null;
           payload.targetUserId = targetUserId || '';
           payload.linkedClientServiceRequestId = linkedClientServiceRequestId;
           await req(`/api/campaigns/${encodeURIComponent(editId)}`, {
@@ -2854,6 +2873,7 @@
           document.getElementById('cStatus').value = 'active';
         } else {
           if (ppiRaw) payload.pointsPerInteraction = Number(ppiRaw);
+          if (subCostRaw) payload.subscriberPointsCost = Number(subCostRaw);
           if (targetUserId) payload.targetUserId = targetUserId;
           if (linkedClientServiceRequestId) payload.linkedClientServiceRequestId = linkedClientServiceRequestId;
           const data = await req('/api/campaigns', {
@@ -3081,7 +3101,7 @@
         const id = delCamp.dataset.id;
         const t = (delCamp.dataset.title || '').trim();
         const ok = confirm(
-          `حذف الحملة نهائياً؟${t ? `\n«${t}»` : ''}\n\nسيُحذف: التفاعلات المسجّلة، أكواد التحقق، وسجل ضغطات الرابط لهذه الحملة. تُخصم نقاط التفاعل المعترَف بها من رصيد المشتركين (ولا يُنزل الرصيد تحت صفر). سجلات «مدفوعات عميل الحملة» تبقى لكن تُفصل عن الحملة.\n\nلا يمكن التراجع تلقائياً.`
+          `حذف الحملة نهائياً؟${t ? `\n«${t}»` : ''}\n\nسيُحذف: التفاعلات المسجّلة، أكواد التحقق، وسجل ضغطات الرابط لهذه الحملة. يُعدَّل رصيد المشتركين: تُزال مكافآت التفاعل وتُعاد قيم الحملة التي خُصمت كنقاط عند التسجيل (ولا يُنزل الرصيد تحت صفر). سجلات «مدفوعات عميل الحملة» تبقى لكن تُفصل عن الحملة.\n\nلا يمكن التراجع تلقائياً.`
         );
         if (!ok) return;
         try {

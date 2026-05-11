@@ -776,7 +776,7 @@
               <div id="portalSvcPricingTotals" hidden></div>
               <p class="hint" style="margin-top: 0.35rem; margin-bottom: 0; font-size: 0.78rem; line-height: 1.55">
                 اضغط عنوان كل منصة (الأيقونة والاسم) لعرض الخدمات أو إخفائها. الخيارات مرتبة تحت <strong>أيقونة كل منصة</strong>. الإرشادات تقريبية؛ لخدمات ذات جدول كمية يظهر تقدير
-                <strong>ريال + نقاط (⌈كمية÷2⌉)</strong>؛ لا يُخصم من رصيدك حتى يعتمد الفريق التنفيذ. إن نقصت خدمات (مثل إكس) راجع لوحة الفريق: اختر <strong>كل الخدمات</strong> أو حدّد جميع الصفوف المطلوبة في «خدمات محددة».
+                <strong>ريال + نقاط (⌈كمية÷2⌉)</strong>. عند الإرسال من «حسابي» يجب أن يكون <strong>رصيد نقاطك ≥ مجموع نقاط التقدير</strong> ليقبل الطلب (نفس طريقة احتساب المشاركة بالكمية). التنفيذ النهائي يبقى بتوافق الفريق.
               </p>
             </div>
             <div>
@@ -848,7 +848,7 @@
                 <th data-copy="interactionsThCampaign">الحملة</th>
                 <th data-copy="interactionsThType">نوع التفاعل</th>
                 <th data-copy="interactionsThBilling">تصنيف الحملة</th>
-                <th data-copy="interactionsThPoints">نقاط الصف</th>
+                <th data-copy="interactionsThPoints">صافي النقاط للصف</th>
                 <th data-copy="interactionsThDate">التاريخ</th>
               </tr>
             </thead>
@@ -1383,12 +1383,11 @@
       });
     }
 
-    function updatePortalSvcPricingTotals() {
-      const panel = document.getElementById('portalSvcPricingTotals');
-      if (!panel || !window.instagramQtyEstimate) return;
+    function computePortalSvcQtyTotals() {
       let totalSar = 0;
       let totalPts = 0;
       let nLines = 0;
+      if (!window.instagramQtyEstimate) return { totalSar: 0, totalPts: 0, nLines: 0 };
       document.querySelectorAll('#portalSvcOptionsHost input[name="portalSvcChk"]:checked').forEach((cb) => {
         const id = cb.value;
         const opt = portalSvcOptionsCache.find((x) => x.id === id);
@@ -1413,13 +1412,20 @@
         nLines += 1;
       });
       totalSar = Math.round(totalSar * 100) / 100;
+      return { totalSar, totalPts, nLines };
+    }
+
+    function updatePortalSvcPricingTotals() {
+      const panel = document.getElementById('portalSvcPricingTotals');
+      if (!panel || !window.instagramQtyEstimate) return;
+      const { totalSar, totalPts, nLines } = computePortalSvcQtyTotals();
       if (nLines === 0) {
         panel.hidden = true;
         panel.textContent = '';
         return;
       }
       panel.hidden = false;
-      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">(لا يُخصم تلقائياً)</span>`;
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">(يجب أن يغطيها رصيد نقاطك ليقبل إرسال الطلب من حسابي)</span>`;
     }
 
     function showPortalSvcFlash(ok, msg) {
@@ -1559,8 +1565,14 @@
       } else {
         linkPart = `<div style="margin-top:0.65rem;font-size:0.8rem;color:var(--muted);line-height:1.45">لا يتوفر رابط يبدأ بـ <code dir="ltr">https://</code> أو حساب مستهدَف لعرض الوجهة. تواصل مع المنصة أو اختر حملة أخرى — يجب أن يوفّر منشئ الحملة رابط المنشور أو الموقع أو المتجر، أو معرّف مشترك لمتابعة حسابه.</div>`;
       }
+      const costPts = Number(c.subscriberPointsCost || 0) || 0;
+      const costLine =
+        costPts > 0
+          ? `<div><strong>قيمة الحملة (تُخصم من رصيدك عند التسجيل):</strong> ${escapeHtml(String(costPts))} ${costPts === 1 ? 'نقطة' : 'نقاط'} — رصيدك الحالي يجب أن يكفي قبل «تسجيل مشاركتي».</div>`
+          : '';
       detail.innerHTML =
-        `<div><strong>النقاط عند تسجيل مشاركتك:</strong> +${escapeHtml(String(c.pointsAwarded != null ? c.pointsAwarded : '—'))}</div>` +
+        `<div><strong>المكافأة عند تسجيل مشاركتك:</strong> +${escapeHtml(String(c.pointsAwarded != null ? c.pointsAwarded : '—'))}</div>` +
+        costLine +
         `<div><strong>نوع التفاعل:</strong> ${escapeHtml(c.typeAr || '')}</div>` +
         `<div><strong>الوجهة:</strong> ${escapeHtml(c.destinationKindAr || '')}` +
         (c.destinationLabel ? ` — ${escapeHtml(c.destinationLabel)}` : '') +
@@ -1650,10 +1662,20 @@
         const ints = data.interactions || [];
         tbI.innerHTML = ints.length
           ? ints
-              .map(
-                (row) =>
-                  `<tr><td>${escapeHtml(row.campaignTitle)}</td><td>${escapeHtml(row.campaignTypeAr || row.campaignType || '')}</td><td style="font-size:0.76rem;color:var(--muted);max-width:12rem">${escapeHtml(row.campaignBillingHintAr || '')}</td><td>${escapeHtml(String(row.pointsEarned ?? ''))}</td><td>${escapeHtml(fmtDate(row.createdAt))}</td></tr>`
-              )
+              .map((row) => {
+                const ch = Number(row.pointsCharged || 0) || 0;
+                const ptsCol =
+                  row.pointsNet != null
+                    ? `${Number(row.pointsNet) > 0 ? '+' : ''}${String(row.pointsNet)}`
+                    : row.pointsEarned != null
+                      ? String(row.pointsEarned)
+                      : '—';
+                const ptsHint =
+                  ch > 0
+                    ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:0.15rem">خصم ${ch} · مكافأة +${escapeHtml(String(row.pointsEarned ?? ''))}</div>`
+                    : '';
+                return `<tr><td>${escapeHtml(row.campaignTitle)}</td><td>${escapeHtml(row.campaignTypeAr || row.campaignType || '')}</td><td style="font-size:0.76rem;color:var(--muted);max-width:12rem">${escapeHtml(row.campaignBillingHintAr || '')}</td><td><span class="mono">${escapeHtml(ptsCol)}</span>${ptsHint}</td><td>${escapeHtml(fmtDate(row.createdAt))}</td></tr>`;
+              })
               .join('')
           : '<tr><td colspan="5" style="color:var(--muted)">لا مشاركات مسجّلة بعد</td></tr>';
 
@@ -1803,6 +1825,19 @@
         const v = inp?.value?.trim();
         if (v) serviceQuantities[cb.value] = Math.floor(Number(v));
       });
+
+      const pq = computePortalSvcQtyTotals();
+      if (pq.nLines > 0 && pq.totalPts > 0) {
+        const statEl = document.getElementById('statPoints');
+        const bal = Math.max(0, Math.floor(Number(String(statEl?.textContent ?? '0').trim())));
+        if (bal < pq.totalPts) {
+          showPortalSvcFlash(
+            false,
+            `رصيد نقاطك الحالي (${bal}) لا يكفي لتقدير هذا الطلب (${pq.totalPts} نقطة — ⌈كمية÷2⌉). خفّف الكميات أو زد رصيدك ثم أعد المحاولة.`,
+          );
+          return;
+        }
+      }
 
       const payload = { requestKind, title, details, requestedServices, serviceQuantities };
       if (name) payload.name = name;
