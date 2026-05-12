@@ -977,12 +977,13 @@
     <section id="sec-adv-pay" class="card">
       <h2>مدفوعات عميل الحملة (وارد للمنصة)</h2>
       <p class="hint" style="margin-top:0">
-        تسجيل يدوي لما استلمتموه من <strong>المعلن أو العلامة التجارية</strong> مقابل تشغيل حملة أو خدمة تسويقية.
-        لا يظهر هذا الجدول للمشترك في «حسابي». يمكن ربط الدفعة ب<strong>معرّف حملة</strong> (اختياري) لتسهيل المراجعة — استخدم «استخدام» من جدول الحملات لملء الحقل.
+        تسجيل ما استلمتموه من <strong>المعلن أو العلامة</strong> أو ما سجّله المشترك بنفسه من «حسابي» كسداد — يظهر في الإجمالي وفي كشف المشترك.
+        يمكن ربط الدفعة ب<strong>معرّف حملة</strong> (اختياري). إن سجّل المشترك من حسابه فتُعرَف الدفعة تلقائياً باسمه/حسابه.
       </p>
       <p id="advPaymentsTotal" class="hint" style="margin-top:0;font-weight:600;color:var(--ok)">—</p>
       <div class="grid2">
         <div><label for="advCampaignId">معرّف الحملة (اختياري)</label><input id="advCampaignId" class="mono" dir="ltr" style="text-align:left" placeholder="من جدول الحملات — زر استخدام" /></div>
+        <div><label for="advPaidByUserId">مشترك دفع (معرّف — اختياري)</label><input id="advPaidByUserId" class="mono" dir="ltr" style="text-align:left" placeholder="من جدول المشتركين عند التسجيل نيابة عنه" /></div>
         <div><label for="advClientLabel">اسم العميل / العلامة (اختياري)</label><input id="advClientLabel" placeholder="مثال: متجر كذا" /></div>
         <div><label for="advAmount">المبلغ (ر.س)</label><input id="advAmount" type="number" step="0.01" min="0.01" placeholder="1500.00" dir="ltr" style="text-align:left" /></div>
         <div><label for="advLabel">البيان (اختياري)</label><input id="advLabel" placeholder="دفعة حملة متابعين، عربون، …" /></div>
@@ -999,6 +1000,7 @@
             <tr>
               <th scope="col">التاريخ</th>
               <th scope="col">المبلغ (ر.س)</th>
+              <th scope="col">دافع (مشترك)</th>
               <th scope="col">العميل</th>
               <th scope="col">البيان</th>
               <th scope="col">الحملة</th>
@@ -1009,6 +1011,26 @@
         </table>
       </div>
       <p id="advPaymentsStatus" class="hint" style="margin-top:0.35rem;margin-bottom:0"></p>
+
+      <h3 style="font-size:1rem;margin:1.25rem 0 0.35rem">كشف الوارد بالمشترك (تسجيل من «حسابي»)</h3>
+      <p class="hint" style="margin-top:0">مجموع ما سجّله كل مشترك كسداد للمنصة من حسابه.</p>
+      <div class="row" style="margin-top:0.45rem">
+        <button type="button" class="secondary small" id="btnAdvSubPaySummaryRefresh">تحديث الكشف المجمّع</button>
+      </div>
+      <div class="table-wrap" style="margin-top:0.55rem">
+        <table dir="rtl" style="width:100%">
+          <thead>
+            <tr>
+              <th scope="col">المشترك</th>
+              <th scope="col">معرّف</th>
+              <th scope="col">عدد الدفعات</th>
+              <th scope="col">الإجمالي (ر.س)</th>
+              <th scope="col">آخر سداد</th>
+            </tr>
+          </thead>
+          <tbody id="advSubPaySummaryBody"></tbody>
+        </table>
+      </div>
     </section>
     </div>
 
@@ -1888,9 +1910,12 @@
                 const noteRaw = (p.note || '').trim();
                 const noteDisp =
                   noteRaw.length > 56 ? `${escapeHtml(noteRaw.slice(0, 54))}…` : escapeHtml(noteRaw || '—');
+                const subRaw = (p.paidBySubscriberDisplayAr || '').trim();
+                const subCell = subRaw ? escapeHtml(subRaw) : '<span style="color:var(--muted)">—</span>';
                 return `<tr>
               <td>${escapeHtml(dt)}</td>
               <td dir="ltr" style="text-align:left">${escapeHtml(amtStr)}</td>
+              <td style="font-size:0.8rem;max-width:10rem">${subCell}</td>
               <td>${escapeHtml((p.clientLabel || '').trim() || '—')}</td>
               <td>${escapeHtml((p.label || '').trim() || '—')}</td>
               <td>${campCell}</td>
@@ -1898,12 +1923,45 @@
             </tr>`;
               })
               .join('')
-          : '<tr><td colspan="6" style="color:var(--muted)">لا دفعات مسجّلة بعد من عملاء الحملات</td></tr>';
+          : '<tr><td colspan="7" style="color:var(--muted)">لا دفعات مسجّلة بعد من عملاء الحملات</td></tr>';
         if (statusEl) statusEl.textContent = `تم التحديث — ${formatJustUpdated()}`;
+        await refreshAdvSubscriberSummary();
       } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="flash err">${escapeHtml(e.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="flash err">${escapeHtml(e.message)}</td></tr>`;
         if (sumEl) sumEl.textContent = '—';
         if (statusEl) statusEl.textContent = `فشل التحديث: ${e.message}`;
+      }
+    }
+
+    async function refreshAdvSubscriberSummary() {
+      const tbody = document.getElementById('advSubPaySummaryBody');
+      if (!tbody) return;
+      try {
+        const data = await req('/api/admin/advertiser-payments/subscriber-summary');
+        const rows = Array.isArray(data.rows) ? data.rows : [];
+        tbody.innerHTML = rows.length
+          ? rows
+              .map((r) => {
+                const dt =
+                  r.lastAt != null
+                    ? new Date(r.lastAt).toLocaleString('ar-SA', { dateStyle: 'short', timeStyle: 'short' })
+                    : '—';
+                const tot = Number(r.totalSar);
+                const totStr = Number.isFinite(tot)
+                  ? tot.toLocaleString('ar-SA', { maximumFractionDigits: 2 })
+                  : String(r.totalSar ?? '');
+                return `<tr>
+              <td style="font-size:0.82rem">${escapeHtml((r.displayAr || '').trim() || '—')}</td>
+              <td class="mono" dir="ltr" style="font-size:0.78rem">${escapeHtml(r.userId || '')}</td>
+              <td>${escapeHtml(String(r.count ?? ''))}</td>
+              <td dir="ltr" style="text-align:left">${escapeHtml(totStr)}</td>
+              <td>${escapeHtml(dt)}</td>
+            </tr>`;
+              })
+              .join('')
+          : '<tr><td colspan="5" style="color:var(--muted)">لا سدادات مسجّلة من المشتركين بعد</td></tr>';
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="flash err">${escapeHtml(e.message)}</td></tr>`;
       }
     }
 
@@ -3089,6 +3147,8 @@
       try {
         const payload = { amountSar, clientLabel, label, note };
         if (campaignId) payload.campaignId = campaignId;
+        const paidByUserId = document.getElementById('advPaidByUserId')?.value.trim() || '';
+        if (paidByUserId) payload.paidByUserId = paidByUserId;
         await req('/api/admin/advertiser-payments', {
           method: 'POST',
           body: JSON.stringify(payload),
@@ -3097,6 +3157,8 @@
         document.getElementById('advAmount').value = '';
         document.getElementById('advLabel').value = '';
         document.getElementById('advNote').value = '';
+        const apu = document.getElementById('advPaidByUserId');
+        if (apu) apu.value = '';
         await refreshAdvertiserPayments(document.getElementById('advPaymentsStatus'));
         await refreshStats();
       } catch (e) {
@@ -3105,6 +3167,7 @@
     };
     document.getElementById('btnAdvPaymentsRefresh').onclick = () =>
       refreshAdvertiserPayments(document.getElementById('advPaymentsStatus'));
+    document.getElementById('btnAdvSubPaySummaryRefresh')?.addEventListener('click', () => refreshAdvSubscriberSummary());
 
     document.getElementById('btnInteract').onclick = async () => {
       const flash = document.getElementById('intFlash');

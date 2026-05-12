@@ -1250,10 +1250,12 @@ const SubscriberPointsGrant = mongoose.model('SubscriberPointsGrant', subscriber
 
 /**
  * مدفوعات من عميل الحملة / المعلن لفريق المنصة (تسجيل يدوي — لا تُعرض لمشترك «حسابي»)
+ * paidByUserId: إن وُجد — الدفعة سجّلها المشترك من «حسابي» فيُحسب الوارد ويظهر في كشف المشترك.
  */
 const advertiserPaymentSchema = new mongoose.Schema(
   {
     campaignId: { type: mongoose.Schema.Types.ObjectId, ref: 'Campaign', default: null },
+    paidByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     /** اسم العلامة أو المرجع التجاري */
     clientLabel: { type: String, trim: true, default: '' },
     amountSar: { type: Number, required: true },
@@ -1264,6 +1266,7 @@ const advertiserPaymentSchema = new mongoose.Schema(
 );
 advertiserPaymentSchema.index({ campaignId: 1, createdAt: -1 });
 advertiserPaymentSchema.index({ createdAt: -1 });
+advertiserPaymentSchema.index({ paidByUserId: 1, createdAt: -1 }, { sparse: true });
 const AdvertiserPayment = mongoose.model('AdvertiserPayment', advertiserPaymentSchema);
 
 /** طلب من عميل: خدمة مدفوعة و/أو نقاط — من صفحة منفصلة عن الاشتراك */
@@ -1454,6 +1457,19 @@ function maskSaudiPhoneLast4(phone) {
   const p = String(phone || '').replace(/\D/g, '');
   if (p.length < 4) return '···';
   return `···${p.slice(-4)}`;
+}
+
+/** اسم مختصر للمشترك في جداول الدفع والكشوف */
+function subscriberPayorDisplayForPayment(u) {
+  if (!u || typeof u !== 'object') return '';
+  const bits = [];
+  const name = String(u.name || '').trim();
+  if (name) bits.push(name);
+  const ig = String(u.instagramUsername || '').trim();
+  if (ig) bits.push(`@${ig}`);
+  const ph = String(u.phone || '').trim();
+  if (ph) bits.push(maskSaudiPhoneLast4(ph));
+  return bits.join(' · ').slice(0, 160);
 }
 
 async function createUserWithPortalToken(payload) {
@@ -2707,7 +2723,15 @@ app.get('/api/portal/summary', async (req, res) => {
     const srOr = [{ userId }];
     if (phoneNorm) srOr.push({ phone: phoneNorm });
 
-    const [interactionRows, interactionsTotal, payments, pointsGrants, serviceRequests, linkClickRows] = await Promise.all([
+    const [
+      interactionRows,
+      interactionsTotal,
+      payments,
+      pointsGrants,
+      serviceRequests,
+      linkClickRows,
+      advFromSubscriber,
+    ] = await Promise.all([
       Interaction.find({ userId })
         .sort({ createdAt: -1 })
         .limit(40)
@@ -2718,6 +2742,11 @@ app.get('/api/portal/summary', async (req, res) => {
       SubscriberPointsGrant.find({ userId }).sort({ createdAt: -1 }).limit(80).lean(),
       ClientServiceRequest.find({ $or: srOr }).sort({ createdAt: -1 }).limit(40).lean(),
       LinkClick.find({ userId }).sort({ createdAt: -1 }).limit(35).populate('campaignId', 'title billingKind').lean(),
+      AdvertiserPayment.find({ paidByUserId: userId })
+        .sort({ createdAt: -1 })
+        .limit(80)
+        .populate('campaignId', 'title')
+        .lean(),
     ]);
 
     const interactions = interactionRows.map((row) => ({
@@ -2739,6 +2768,15 @@ app.get('/api/portal/summary', async (req, res) => {
       createdAt: p.createdAt,
     }));
     const totalPaidSar = paymentsOut.reduce((s, p) => s + (Number(p.amountSar) || 0), 0);
+
+    const platformPaymentsOut = advFromSubscriber.map((p) => ({
+      amountSar: p.amountSar,
+      label: p.label || '',
+      note: p.note || '',
+      createdAt: p.createdAt,
+      campaignTitle: p.campaignId?.title || '',
+    }));
+    const totalPaidToPlatformSar = platformPaymentsOut.reduce((s, p) => s + (Number(p.amountSar) || 0), 0);
 
     const serviceRequestsOut = serviceRequests.map((sr) => ({
       requestKind: sr.requestKind,
@@ -2799,6 +2837,20 @@ app.get('/api/portal/summary', async (req, res) => {
         detailAr: bits.length ? bits.join(' — ') : '—',
         pointsDelta: null,
         amountSar: Number(p.amountSar) || 0,
+      });
+    }
+
+    for (const ap of advFromSubscriber) {
+      const bits = [ap.label, ap.note].map((x) => String(x || '').trim()).filter(Boolean);
+      const campTit = ap.campaignId?.title;
+      portalActivities.push({
+        id: `adv-pay-sub:${String(ap._id)}`,
+        at: ap.createdAt,
+        bucketAr: 'سداد للمنصة',
+        headlineAr: 'تسجيل وارد — دفع من حسابك',
+        detailAr: [campTit ? `حملة: ${campTit}` : '', bits.length ? bits.join(' — ') : '—'].filter(Boolean).join(' — '),
+        pointsDelta: null,
+        amountSar: Number(ap.amountSar) || 0,
       });
     }
 
@@ -2921,10 +2973,79 @@ app.get('/api/portal/summary', async (req, res) => {
       interactions,
       payments: paymentsOut,
       totalPaidSar,
+      platformPaymentsFromSubscriber: platformPaymentsOut,
+      totalPaidToPlatformSar,
       pointsPerCampaignInteraction: POINTS_PER_INTERACTION,
       defaultPointsPerInteraction: POINTS_PER_INTERACTION,
       serviceRequests: serviceRequestsOut,
       activityLog: portalActivities.slice(0, 85),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * تسجيل دفعة وارد للمنصة من المشترك — تظهر في «وارد الحملات» وفي كشف المشترك.
+ * إن أُرسل campaignId يجب أن تكون الحملة تخصّك كـ targetUserId.
+ */
+app.post('/api/portal/record-advertiser-payment', async (req, res) => {
+  try {
+    const t = portalTokenFromReq(req);
+    if (!t || t.length < 24) {
+      return res.status(400).json({ error: 'أعد الدخول من صفحة «دخول حسابي»' });
+    }
+    const user = await User.findOne({ portalToken: t }).lean();
+    if (!user) return res.status(404).json({ error: 'الرابط غير صالح' });
+
+    const amountSar = Number(req.body?.amountSar);
+    if (!Number.isFinite(amountSar) || amountSar <= 0 || amountSar > 1e7) {
+      return res.status(400).json({ error: 'أدخل مبلغاً صحيحاً بالريال (أكبر من صفر)' });
+    }
+
+    let campaignId = null;
+    const rawCamp = req.body?.campaignId;
+    if (rawCamp != null && String(rawCamp).trim()) {
+      const cid = String(rawCamp).trim();
+      if (!mongoose.isValidObjectId(cid)) {
+        return res.status(400).json({ error: 'معرّف الحملة غير صالح — اتركه فارغاً إن لم تربط الدفعة بحملة' });
+      }
+      const camp = await Campaign.findById(cid).select('targetUserId').lean();
+      if (!camp) return res.status(404).json({ error: 'الحملة غير موجودة' });
+      const tu = camp.targetUserId ? String(camp.targetUserId) : '';
+      if (!tu || tu !== String(user._id)) {
+        return res.status(403).json({
+          error:
+            'يمكن ربط الدفعة فقط بحملة أنت مُستهدَفها في المنظومة (المشترك المستهدَف في الحملة = حسابك).',
+        });
+      }
+      campaignId = camp._id;
+    }
+
+    const labelIn = req.body?.label != null ? String(req.body.label).trim().slice(0, 120) : '';
+    const note = req.body?.note != null ? String(req.body.note).trim().slice(0, 500) : '';
+    const label = labelIn || 'سداد — من المشترك عبر حسابي';
+
+    const autoClient = subscriberPayorDisplayForPayment(user);
+    const payment = await AdvertiserPayment.create({
+      campaignId: campaignId || undefined,
+      paidByUserId: user._id,
+      clientLabel: autoClient || 'مشترك',
+      amountSar,
+      label,
+      note,
+    });
+
+    res.status(201).json({
+      ok: true,
+      payment: {
+        id: String(payment._id),
+        amountSar: payment.amountSar,
+        label: payment.label,
+        note: payment.note,
+        createdAt: payment.createdAt,
+        campaignId: campaignId ? String(campaignId) : '',
+      },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3169,8 +3290,20 @@ app.post('/api/admin/advertiser-payments', async (req, res) => {
       req.body?.clientLabel != null ? String(req.body.clientLabel).trim().slice(0, 160) : '';
     const label = req.body?.label != null ? String(req.body.label).trim().slice(0, 120) : '';
     const note = req.body?.note != null ? String(req.body.note).trim().slice(0, 500) : '';
+    let paidByUserId = null;
+    const rawPayer = req.body?.paidByUserId;
+    if (rawPayer != null && String(rawPayer).trim()) {
+      const pid = String(rawPayer).trim();
+      if (!mongoose.isValidObjectId(pid)) {
+        return res.status(400).json({ error: 'معرّف المشترك الدافع غير صالح' });
+      }
+      const exists = await User.exists({ _id: pid });
+      if (!exists) return res.status(404).json({ error: 'المشترك الدافع غير موجود' });
+      paidByUserId = new mongoose.Types.ObjectId(pid);
+    }
     const payment = await AdvertiserPayment.create({
       campaignId,
+      paidByUserId: paidByUserId || undefined,
       clientLabel,
       amountSar,
       label,
@@ -3188,21 +3321,68 @@ app.get('/api/admin/advertiser-payments', async (_req, res) => {
       .sort({ createdAt: -1 })
       .limit(150)
       .populate('campaignId', 'title type dealSummary')
+      .populate('paidByUserId', 'name instagramUsername phone')
       .lean();
     const sumAgg = await AdvertiserPayment.aggregate([{ $group: { _id: null, t: { $sum: '$amountSar' } } }]);
     res.json({
       ok: true,
       totalReceivedSar: sumAgg.length ? sumAgg[0].t : 0,
-      payments: rows.map((r) => ({
-        _id: r._id,
-        amountSar: r.amountSar,
-        clientLabel: r.clientLabel || '',
-        label: r.label || '',
-        note: r.note || '',
-        createdAt: r.createdAt,
-        campaignId: r.campaignId && r.campaignId._id ? String(r.campaignId._id) : '',
-        campaignTitle: r.campaignId?.title || '',
-      })),
+      payments: rows.map((r) => {
+        const pu = r.paidByUserId && typeof r.paidByUserId === 'object' ? r.paidByUserId : null;
+        return {
+          _id: r._id,
+          amountSar: r.amountSar,
+          clientLabel: r.clientLabel || '',
+          label: r.label || '',
+          note: r.note || '',
+          createdAt: r.createdAt,
+          campaignId: r.campaignId && r.campaignId._id ? String(r.campaignId._id) : '',
+          campaignTitle: r.campaignId?.title || '',
+          paidByUserId: pu && pu._id ? String(pu._id) : '',
+          paidBySubscriberDisplayAr: subscriberPayorDisplayForPayment(pu),
+        };
+      }),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** كشف وارد مجمّع لكل مشترك سجّل دفعاته من «حسابي» */
+app.get('/api/admin/advertiser-payments/subscriber-summary', async (_req, res) => {
+  try {
+    const agg = await AdvertiserPayment.aggregate([
+      { $match: { paidByUserId: { $exists: true, $ne: null } } },
+      {
+        $group: {
+          _id: '$paidByUserId',
+          totalSar: { $sum: '$amountSar' },
+          count: { $sum: 1 },
+          lastAt: { $max: '$createdAt' },
+        },
+      },
+      { $sort: { lastAt: -1 } },
+      { $limit: 200 },
+    ]);
+    const ids = agg.map((x) => x._id).filter((id) => id != null);
+    const users = ids.length
+      ? await User.find({ _id: { $in: ids } })
+          .select('name instagramUsername phone')
+          .lean()
+      : [];
+    const byId = new Map(users.map((u) => [String(u._id), u]));
+    res.json({
+      ok: true,
+      rows: agg.map((r) => {
+        const u = byId.get(String(r._id)) || {};
+        return {
+          userId: String(r._id),
+          displayAr: subscriberPayorDisplayForPayment(u),
+          totalSar: r.totalSar,
+          count: r.count,
+          lastAt: r.lastAt,
+        };
+      }),
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3887,6 +4067,7 @@ app.delete('/api/users/:id', async (req, res) => {
       SubscriberPayment.deleteMany({ userId: uid }),
       SubscriberPointsGrant.deleteMany({ userId: uid }),
     ]);
+    await AdvertiserPayment.updateMany({ paidByUserId: uid }, { $unset: { paidByUserId: '' } });
     await ClientServiceRequest.updateMany({ userId: uid }, { $set: { userId: null, linkedViaPortal: false } });
 
     if (user.phone) portalLoginOtpByPhone.delete(user.phone);
