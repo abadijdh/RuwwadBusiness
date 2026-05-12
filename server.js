@@ -42,7 +42,17 @@ function sanitizeTeamPanelSecretPath(raw) {
   return s;
 }
 
-const TEAM_PANEL_SECRET_PATH = sanitizeTeamPanelSecretPath(process.env.TEAM_PANEL_SECRET_PATH);
+const rawTeamPanelSecretPath = process.env.TEAM_PANEL_SECRET_PATH;
+const TEAM_PANEL_SECRET_PATH = sanitizeTeamPanelSecretPath(rawTeamPanelSecretPath);
+if (
+  rawTeamPanelSecretPath !== undefined &&
+  String(rawTeamPanelSecretPath).trim() &&
+  !TEAM_PANEL_SECRET_PATH
+) {
+  console.warn(
+    '[WARN] TEAM_PANEL_SECRET_PATH مضبوط في البيئة لكنه غير صالح بعد التحقق — مسار لوحة الطاقم السري لن يُفعَّل (سيظهر Cannot GET لذلك المسار). راجع: طول 4–128، أحرف لاتينية وأرقام و _ و - فقط، بدون /.'
+  );
+}
 const TEAM_PANEL_PASSWORD = String(process.env.TEAM_PANEL_PASSWORD || '').trim();
 
 if (!TEAM_PANEL_PASSWORD) {
