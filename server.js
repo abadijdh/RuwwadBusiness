@@ -1360,13 +1360,25 @@ async function applyLinkedServiceRequestFulfillmentDebitForCampaign(campaignDoc)
   const csrRaw = campaignDoc.linkedClientServiceRequestId;
   if (!csrRaw || !mongoose.isValidObjectId(String(csrRaw))) return { ok: true, debit: 0 };
 
+  /** حملة مدفوعة (اتفاق مالي): لا نخصم نقاط تنفيذ من صاحب الطلب المرتبط — التسوية بالريال وليس بنقاط التقدير */
+  if (String(campaignDoc.billingKind || '').trim() === 'paid') {
+    return { ok: true, debit: 0 };
+  }
+
   const csrIdObj =
     csrRaw instanceof mongoose.Types.ObjectId ? csrRaw : new mongoose.Types.ObjectId(String(csrRaw));
 
   const csr = await ClientServiceRequest.findById(csrIdObj)
-    .select('userId estimatedTotalPoints estimatedTotalSar pointsDebitedForFulfillment title pricingEstimateLines')
+    .select(
+      'userId requestKind estimatedTotalPoints estimatedTotalSar pointsDebitedForFulfillment title pricingEstimateLines'
+    )
     .lean();
   if (!csr) return { ok: true, debit: 0 };
+
+  /** طلب أُرسل كـ«خدمة مدفوعة» فقط: لا يُطبَّق خصم النقاط التدريجي من صاحب الطلب حتى لو بقي التصنيف التجاري للحملة غير محدّد */
+  if (String(csr.requestKind || '').trim() === 'paid_service') {
+    return { ok: true, debit: 0 };
+  }
 
   const effectiveCap = effectiveServiceRequestEstimatedPoints(csr);
   const debit = computeLinkedServiceRequestStepDebitPoints(campaignDoc, csr, effectiveCap);
