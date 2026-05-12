@@ -2409,8 +2409,17 @@
                     : '<span style="color:var(--muted)">لا</span>';
                 const uidRaw = String(row.userId || '').trim();
                 const reqTitleShort = String(row.title || '').trim().slice(0, 200);
+                const estSarAttr =
+                  row.estimatedTotalSar != null && Number.isFinite(Number(row.estimatedTotalSar))
+                    ? escapeHtml(String(row.estimatedTotalSar))
+                    : '';
+                const estPtsAttr =
+                  row.estimatedTotalPoints != null && Number.isFinite(Number(row.estimatedTotalPoints))
+                    ? escapeHtml(String(Math.floor(Number(row.estimatedTotalPoints))))
+                    : '';
+                const rkAttr = escapeHtml(String(row.requestKind || '').trim());
                 const prepCampaignCell = uidRaw
-                  ? `<button type="button" class="small secondary cr-prep-campaign-btn" data-cr-request-id="${escapeHtml(row.id)}" data-user-id="${escapeHtml(uidRaw)}" data-req-title="${escapeHtml(reqTitleShort)}">تحضير حملة</button>`
+                  ? `<button type="button" class="small secondary cr-prep-campaign-btn" data-cr-request-id="${escapeHtml(row.id)}" data-user-id="${escapeHtml(uidRaw)}" data-req-title="${escapeHtml(reqTitleShort)}" data-request-kind="${rkAttr}" data-est-sar="${estSarAttr}" data-est-pts="${estPtsAttr}">تحضير حملة</button>`
                   : `<span style="color:var(--muted);font-size:0.76rem;max-width:6rem;display:inline-block" title="الطلب غير مربوط بمستخدم في المنصة؛ أنشئ المشترك أو اطلب الخدمة من «حسابي» ليُربط الطلب تلقائياً.">غير مربوط</span>`;
                 const fst = row.fulfillmentStatus || 'pending';
                 const fstAr = row.fulfillmentStatusAr || 'قيد المعالجة';
@@ -2718,11 +2727,47 @@
         const crReqId = prepBtn.getAttribute('data-cr-request-id');
         if (linkedCr) linkedCr.value = crReqId ? crReqId.trim() : '';
         updateLinkedClientRequestCampaignUi();
+        const rk = String(prepBtn.getAttribute('data-request-kind') || '').trim();
+        const bkEl = document.getElementById('cBillingKind');
+        if (bkEl) {
+          if (rk === 'paid_service' || rk === 'both') bkEl.value = 'paid';
+          else if (rk === 'points') bkEl.value = 'free';
+          else bkEl.value = 'unspecified';
+        }
+        const estSarRaw = prepBtn.getAttribute('data-est-sar');
+        const estPtsRaw = prepBtn.getAttribute('data-est-pts');
+        const estSarNum = estSarRaw != null && String(estSarRaw).trim() !== '' ? Number(estSarRaw) : NaN;
+        const estPtsNum = estPtsRaw != null && String(estPtsRaw).trim() !== '' ? Math.floor(Number(estPtsRaw)) : NaN;
+        const dealEl = document.getElementById('cDealSummary');
+        const subCostEl = document.getElementById('cSubscriberPointsCost');
+        if (subCostEl) subCostEl.value = '';
+        if (dealEl) {
+          const parts = [];
+          if (rk === 'paid_service') {
+            parts.push('طلب عميل — خدمة مدفوعة');
+            if (Number.isFinite(estSarNum) && estSarNum > 0) parts.push(`تقدير من الطلب: ${estSarNum} ر.س`);
+          } else if (rk === 'both') {
+            parts.push('طلب عميل — مدفوعة ونقاط');
+            if (Number.isFinite(estSarNum) && estSarNum > 0) parts.push(`تقدير ريال: ${estSarNum} ر.س`);
+            if (Number.isFinite(estPtsNum) && estPtsNum > 0) parts.push(`تقدير نقاط: ${estPtsNum}`);
+          } else if (rk === 'points') {
+            parts.push('طلب عميل — برنامج النقاط');
+            if (Number.isFinite(estPtsNum) && estPtsNum > 0) parts.push(`تقدير نقاط من الطلب: ${estPtsNum}`);
+          } else {
+            parts.push('طلب عميل');
+            if (Number.isFinite(estSarNum) && estSarNum > 0) parts.push(`تقدير ريال: ${estSarNum} ر.س`);
+            if (Number.isFinite(estPtsNum) && estPtsNum > 0) parts.push(`تقدير نقاط: ${estPtsNum}`);
+          }
+          dealEl.value = parts.join(' — ').slice(0, 280);
+        }
+        if (subCostEl && (rk === 'points' || rk === 'both') && Number.isFinite(estPtsNum) && estPtsNum > 0) {
+          subCostEl.value = String(estPtsNum);
+        }
         showDashPage('campaign-new');
         document.getElementById('sec-campaign')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         showFlash(
           document.getElementById('campFlash'),
-          'تم تعبئة «معرّف مشترك مستهدَف» و«مرجع طلب العميل» من صف الطلب. أكمل رابط الحملة والمدينة والاهتمام ثم أنشئ الحملة.',
+          'تم تعبئة «معرّف مشترك مستهدَف» و«مرجع طلب العميل»، و«التصنيف التجاري» و«ملخص الاتفاق» (و«قيمة الحملة كنقاط» عند طلب نقاط/مختلط) من صف الطلب. أكمل رابط الحملة والمدينة والاهتمام ثم أنشئ الحملة.',
           true
         );
         return;

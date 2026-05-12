@@ -770,6 +770,17 @@
                 <option value="other">أخرى</option>
               </select>
             </div>
+            <div
+              id="portalSvcPaidNotice"
+              hidden
+              style="margin-top: 0.45rem; padding: 0.55rem 0.65rem; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.08); font-size: 0.82rem; line-height: 1.55"
+            >
+              <strong>خدمة مدفوعة — التسعير والدفع</strong>
+              <p style="margin: 0.35rem 0 0; color: var(--muted)">
+                لا يوجد دفع فوري من هذه الصفحة. يظهر المبلغ التقديري بالريال عندما تختار خدمة ذات تسعير حسب الكمية وتدخل الكمية. بعد إرسال الطلب يتواصل معك الفريق لاستكمال الدفع والاتفاق قبل تنفيذ الحملة.
+              </p>
+              <p id="portalSvcPaidAmountLine" style="margin: 0.45rem 0 0; font-variant-numeric: tabular-nums; color: var(--text)"></p>
+            </div>
             <div>
               <span class="hint" style="display: block; margin-bottom: 0.35rem">ما الذي تهتم به من خدماتنا؟ (اختياري)</span>
               <div id="portalSvcOptionsHost" class="portal-svc-host" aria-label="أنواع الخدمات"></div>
@@ -1440,11 +1451,15 @@
 
     function updatePortalSvcPricingTotals() {
       const panel = document.getElementById('portalSvcPricingTotals');
-      if (!panel || !window.instagramQtyEstimate) return;
+      if (!panel || !window.instagramQtyEstimate) {
+        syncPortalSvcPaidNotice();
+        return;
+      }
       const { totalSar, totalPts, nLines } = computePortalSvcQtyTotals();
       if (nLines === 0) {
         panel.hidden = true;
         panel.textContent = '';
+        syncPortalSvcPaidNotice();
         return;
       }
       panel.hidden = false;
@@ -1455,6 +1470,32 @@
         ? '(يجب أن يغطيها رصيد نقاطك ليقبل إرسال الطلب من «حسابي».)'
         : '(رقم النقاط مرجعي للمنظومة؛ طلب «خدمة مدفوعة» لا يشترط رصيد نقاط عند الإرسال.)';
       panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">${ptsNote}</span>`;
+      syncPortalSvcPaidNotice();
+    }
+
+    function syncPortalSvcPaidNotice() {
+      const notice = document.getElementById('portalSvcPaidNotice');
+      const amountLine = document.getElementById('portalSvcPaidAmountLine');
+      const kindEl = document.getElementById('portalSvcKind');
+      if (!notice || !amountLine || !kindEl) return;
+      const rk = String(kindEl.value || '').trim();
+      if (rk !== 'paid_service') {
+        notice.hidden = true;
+        amountLine.textContent = '';
+        return;
+      }
+      notice.hidden = false;
+      if (!window.instagramQtyEstimate) {
+        amountLine.textContent = '';
+        return;
+      }
+      const { totalSar, nLines } = computePortalSvcQtyTotals();
+      if (nLines > 0) {
+        amountLine.innerHTML = `<strong>المبلغ التقديري الحالي:</strong> ${totalSar} ريال سعودي (مجموع البنود التي أدخلت لها كمية).`;
+      } else {
+        amountLine.textContent =
+          'لم يُحسب مبلغ بعد: اختر الخدمة وأدخل الكمية حيث يتوفر جدول كمية ليظهر تقدير المبلغ بالريال هنا وفي «مجموع التقدير» أدناه.';
+      }
     }
 
     function showPortalSvcFlash(ok, msg) {
@@ -1742,7 +1783,10 @@
       fetchAndPaintPortalSummary();
     })();
 
-    document.getElementById('portalSvcKind')?.addEventListener('change', updatePortalSvcPricingTotals);
+    document.getElementById('portalSvcKind')?.addEventListener('change', () => {
+      updatePortalSvcPricingTotals();
+      syncPortalSvcPaidNotice();
+    });
 
     document.getElementById('partCampSelect').addEventListener('change', updateParticipateDetail);
     document.getElementById('btnPortalVerifyParticipationLink').onclick = async () => {
