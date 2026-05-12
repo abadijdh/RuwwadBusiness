@@ -2,8 +2,8 @@
  * Instagram Platform — OAuth (Instagram Login) للتحقق من حساب احترافي وربطه بملف المشترك.
  *
  * ضبط متغيرات البيئة (Meta App من نوع Business + منتج Instagram):
- * - INSTAGRAM_APP_ID
- * - INSTAGRAM_APP_SECRET
+ * - INSTAGRAM_APP_ID   ← من لوحة Meta: Instagram → إعداد API مع تسجيل دخول Instagram → تسجيل دخول Business → إعدادات Business login → «Instagram App ID» (قد يطابق App ID العام وقد لا؛ لا تستخدم رقماً من تطبيق آخر)
+ * - INSTAGRAM_APP_SECRET ← من نفس الشاشة: «Instagram app secret» (قد يطابق سر التطبيق العام)
  * - INSTAGRAM_REDIRECT_URI  ← يجب أن يطابق «Valid OAuth Redirect URIs» حرفياً (بما فيه الشرطة المائلة الأخيرة إن وُجدت)
  * - INSTAGRAM_LOGIN_SCOPE     اختياري، افتراضي: instagram_business_basic
  * - INSTAGRAM_GRAPH_API_VERSION اختياري، افتراضي: v21.0
@@ -152,7 +152,8 @@ function buildInstagramAuthorizeUrl({ portalToken }) {
   const cfg = getInstagramOAuthConfig();
   if (!cfg.configured) throw new Error('not_configured');
   const state = makeInstagramOAuthState(portalToken);
-  const p = new URL('https://api.instagram.com/oauth/authorize');
+  /** Meta Business Login يستخدم نطاق www (راجع وثائق Business Login for Instagram) */
+  const p = new URL('https://www.instagram.com/oauth/authorize');
   p.searchParams.set('client_id', cfg.appId);
   p.searchParams.set('redirect_uri', cfg.redirectUri);
   p.searchParams.set('response_type', 'code');
