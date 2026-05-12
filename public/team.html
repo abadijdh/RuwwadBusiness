@@ -157,6 +157,29 @@
       white-space: nowrap;
       letter-spacing: 0.01em;
     }
+    /** تنبيه طلبات العملاء — قيد المعالجة */
+    .client-requests-pending-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0.48rem;
+      height: 0.48rem;
+      margin-inline-start: 0.28rem;
+      background: #f43f5e;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(15, 15, 18, 0.96);
+      flex-shrink: 0;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+    }
+    .client-requests-pending-badge.has-count {
+      min-width: 1.02rem;
+      height: 1.02rem;
+      border-radius: 999px;
+      padding: 0 0.22rem;
+    }
     .main-area {
       direction: rtl;
       flex: 1;
@@ -659,7 +682,7 @@
         <nav class="sidebar-nav dash-rail" aria-label="أقسام اللوحة">
           <a href="#overview" data-page="overview" class="active"><span class="dash-rail-emoji" aria-hidden="true">📊</span><span class="dash-rail-label">نظرة عامة</span></a>
           <a href="#branding" data-page="branding"><span class="dash-rail-emoji" aria-hidden="true">🎨</span><span class="dash-rail-label">الشعار والمنصات</span></a>
-          <a href="#requests" data-page="requests"><span class="dash-rail-emoji" aria-hidden="true">📋</span><span class="dash-rail-label">طلبات العملاء</span></a>
+          <a href="#requests" data-page="requests"><span class="dash-rail-emoji" aria-hidden="true">📋</span><span class="dash-rail-label">طلبات العملاء</span><span id="clientRequestsNavPending" class="client-requests-pending-badge" hidden></span></a>
           <a href="#subscribers" data-page="subscribers"><span class="dash-rail-emoji" aria-hidden="true">👥</span><span class="dash-rail-label">مشترك ودفعة</span></a>
           <a href="#advertiser-pay" data-page="advertiser-pay"><span class="dash-rail-emoji" aria-hidden="true">💰</span><span class="dash-rail-label">وارد الحملات</span></a>
           <a href="#campaign-new" data-page="campaign-new"><span class="dash-rail-emoji" aria-hidden="true">📣</span><span class="dash-rail-label">إنشاء حملة</span></a>
@@ -1344,6 +1367,54 @@
       outreach: 'روابط وتبليغ',
       tables: 'الجداول',
     };
+
+    function applyClientRequestsPendingNavCount(n) {
+      const el = document.getElementById('clientRequestsNavPending');
+      const nav = document.querySelector('.sidebar-nav.dash-rail a[data-page="requests"]');
+      const labBase = PAGE_LABELS_AR.requests || 'طلبات العملاء';
+      if (!el) return;
+      const count = Math.max(0, Math.floor(Number(n)) || 0);
+      if (count <= 0) {
+        el.hidden = true;
+        el.textContent = '';
+        el.classList.remove('has-count');
+        el.removeAttribute('title');
+        if (nav) nav.setAttribute('aria-label', labBase);
+        return;
+      }
+      el.hidden = false;
+      if (count === 1) {
+        el.textContent = '';
+        el.classList.remove('has-count');
+      } else {
+        el.textContent = count > 99 ? '99+' : String(count);
+        el.classList.add('has-count');
+      }
+      const hint =
+        count === 1
+          ? 'يوجد طلب عميل واحد قيد المعالجة'
+          : count > 99
+            ? 'يوجد أكثر من ٩٩ طلباً قيد المعالجة'
+            : `يوجد ${count} طلبات قيد المعالجة`;
+      el.setAttribute('title', hint);
+      if (nav) nav.setAttribute('aria-label', `${labBase} — ${hint}`);
+    }
+
+    function syncClientRequestsNavPendingIndicator(rows) {
+      const list = Array.isArray(rows) ? rows : [];
+      const n = list.filter((r) => String(r.fulfillmentStatus || 'pending') === 'pending').length;
+      applyClientRequestsPendingNavCount(n);
+    }
+
+    function recountClientRequestsPendingNavFromTable() {
+      const body = document.getElementById('clientRequestsBody');
+      if (!body) return;
+      let n = 0;
+      body.querySelectorAll('tr[data-cr-row] .cr-status-badge').forEach((badge) => {
+        if (!badge.classList.contains('is-done') && !badge.classList.contains('is-cancel')) n += 1;
+      });
+      applyClientRequestsPendingNavCount(n);
+    }
 
     let serviceCatalogLazyLoaded = false;
 
@@ -2454,9 +2525,11 @@
               .join('')
           : '<tr><td colspan="12" style="color:var(--muted)">لا طلبات بعد</td></tr>';
         if (statusEl) statusEl.textContent = `تم التحديث — ${formatJustUpdated()}`;
+        syncClientRequestsNavPendingIndicator(rows);
       } catch (e) {
         body.innerHTML = `<tr><td colspan="12" class="flash err">${escapeHtml(e.message)}</td></tr>`;
         if (statusEl) statusEl.textContent = `فشل: ${e.message}`;
+        syncClientRequestsNavPendingIndicator([]);
       }
     }
 
@@ -2787,6 +2860,7 @@
           if (body && !body.querySelector('tr[data-cr-row]')) {
             body.innerHTML = '<tr><td colspan="12" style="color:var(--muted)">لا طلبات بعد</td></tr>';
           }
+          recountClientRequestsPendingNavFromTable();
         } catch (e) {
           alert(e.message);
         }
@@ -2814,6 +2888,7 @@
         }
         const stEl = document.getElementById('clientRequestsStatus');
         if (stEl) stEl.textContent = 'تم تحديث حالة الطلب.';
+        recountClientRequestsPendingNavFromTable();
       } catch (e) {
         alert(e.message);
       }
