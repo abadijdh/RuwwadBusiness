@@ -818,6 +818,7 @@
         <h2 data-copy="secParticipateTitle">المشاركة في حملة (تسجيل التفاعل)</h2>
         <p class="hint" data-copy-html="secParticipateHint">افتح الوجهة من الزر أدناه إن وُجد، وأكمل الإجراء (إعجاب، متابعة، تعليق…) من تطبيق المنصة أو الموقع نفسه؛ الموقع لا يتلقّى إشعاراً تلقائياً بالإعجاب أو غيره. بعد ذلك عد إلى هذه الصفحة واضغط «تسجيل مشاركتي». تُضاف النقاط وفق سياسة المنصة (مرّة واحدة لكل حملة). إن زودك الفريق ب<strong>كود تحقق</strong> مرتبط بك وب هذه الحملة فقط، يُخفى رابط التفاعل حتى تُدخل الكود وتضغط «تحقق من الكود وفتح رابط التفاعل»، ثم أدخل الكود أيضاً عند «تسجيل مشاركتي».</p>
         <div id="partFlash" class="flash" style="display:none;margin-top:0.65rem" role="status"></div>
+        <p id="partPlatformFilterHint" class="hint" style="display:none;margin-top:0.35rem" role="status"></p>
         <label for="partCampSelect" data-copy="labelCamp">اختر الحملة</label>
         <select id="partCampSelect" aria-describedby="partCampDetail"><option value="">— اختر حملة —</option></select>
         <div id="partCampDetail" class="hint" style="margin-top:0.45rem;line-height:1.55"></div>
@@ -1626,6 +1627,11 @@
       const sel = document.getElementById('partCampSelect');
       const detail = document.getElementById('partCampDetail');
       showPartFlash(false, '');
+      const pHint0 = document.getElementById('partPlatformFilterHint');
+      if (pHint0) {
+        pHint0.style.display = 'none';
+        pHint0.textContent = '';
+      }
       if (!sel) return;
       sel.innerHTML = '<option value="">جاري التحميل…</option>';
       if (detail) detail.innerHTML = '';
@@ -1638,6 +1644,11 @@
         const data = await r.json().catch(() => ({}));
         if (!r.ok) {
           sel.innerHTML = '<option value="">تعذّر تحميل الحملات</option>';
+          const pHintErr = document.getElementById('partPlatformFilterHint');
+          if (pHintErr) {
+            pHintErr.style.display = 'none';
+            pHintErr.textContent = '';
+          }
           return;
         }
         portalParticipationCampaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
@@ -1646,6 +1657,20 @@
         participationPtsHint = defaultPts
           ? `لكل حملة عدد نقاط خاص عند التسجيل (انظر التفاصيل بعد اختيار الحملة). إن لم يُحدَّد للحملة شيء، يُستخدم افتراض المنصة <strong>+${escapeHtml(defaultPts)}</strong> نقطة.`
           : '';
+        const pHint = document.getElementById('partPlatformFilterHint');
+        if (pHint) {
+          const lab = String(data.subscriberSocialPlatformLabelAr || '').trim();
+          if (lab) {
+            pHint.style.display = 'block';
+            pHint.textContent =
+              'تُعرض لك حملات «منصة تواصل» التي تطابق منصة حسابك المسجّل فقط («' +
+              lab +
+              '»). مثال: حملة إكس (تويتر) لا تظهر لمشترك إنستغرام، والعكس — لكل المنصات المعتمدة.';
+          } else {
+            pHint.style.display = 'none';
+            pHint.textContent = '';
+          }
+        }
         if (!portalParticipationCampaigns.length) {
           sel.innerHTML = '<option value="">لا توجد حملات متاحة للتسجيل حالياً</option>';
           if (detail) {
@@ -1666,6 +1691,11 @@
         if (detail) detail.innerHTML = participationPtsHint;
       } catch {
         sel.innerHTML = '<option value="">تعذّر الاتصال بالخادم</option>';
+        const pHintCatch = document.getElementById('partPlatformFilterHint');
+        if (pHintCatch) {
+          pHintCatch.style.display = 'none';
+          pHintCatch.textContent = '';
+        }
       }
     }
 
@@ -1723,9 +1753,15 @@
         costPts > 0
           ? `<div><strong>قيمة الحملة (تُخصم من رصيدك عند التسجيل):</strong> ${escapeHtml(String(costPts))} ${costPts === 1 ? 'نقطة' : 'نقاط'} — رصيدك الحالي يجب أن يكفي قبل «تسجيل مشاركتي».</div>`
           : '';
+      const platLab = String(c.campaignSocialPlatformLabelAr || '').trim();
+      const platLine =
+        (c.destinationKind || 'social') === 'social' && platLab
+          ? `<div><strong>منصة الحملة:</strong> ${escapeHtml(platLab)} — يجب أن يكون نشاطك على نفس المنصة.</div>`
+          : '';
       detail.innerHTML =
         `<div><strong>المكافأة عند تسجيل مشاركتك:</strong> +${escapeHtml(String(c.pointsAwarded != null ? c.pointsAwarded : '—'))}</div>` +
         costLine +
+        platLine +
         `<div><strong>نوع التفاعل:</strong> ${escapeHtml(c.typeAr || '')}</div>` +
         `<div><strong>الوجهة:</strong> ${escapeHtml(c.destinationKindAr || '')}` +
         (c.destinationLabel ? ` — ${escapeHtml(c.destinationLabel)}` : '') +

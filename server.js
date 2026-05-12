@@ -894,6 +894,65 @@ function profileUrlForPlatform(platformId, handle) {
   return meta ? meta.profileUrl(h) : '';
 }
 
+/** يستنتج instagram | twitter | … من عنوان URL لوجهة social */
+function inferSocialPlatformIdFromUrl(rawUrl) {
+  if (rawUrl == null) return null;
+  let s = String(rawUrl).trim();
+  if (!s) return null;
+  if (!/^https?:\/\//i.test(s)) {
+    const looksLikeHost = /^([\w-]+\.)+[a-z]{2,}/i.test(s);
+    if (looksLikeHost) s = `https://${s}`;
+  }
+  try {
+    const u = new URL(s);
+    const host = u.hostname.replace(/^www\./i, '').toLowerCase();
+    if (host.includes('instagram.com')) return 'instagram';
+    if (host.includes('tiktok.com')) return 'tiktok';
+    if (host.includes('snapchat.com')) return 'snapchat';
+    if (host === 'x.com' || host.includes('twitter.com')) return 'twitter';
+    if (host.includes('youtube.com') || host === 'youtu.be') return 'youtube';
+  } catch (_) {}
+  return null;
+}
+
+/** منصة المشترك المخزّنة — افتراضي إنستغرام للصفوف القديمة */
+function subscriberStoredSocialPlatformId(user) {
+  const p = user?.socialPlatform;
+  if (p != null && String(p).trim() && PLATFORM_ID_SET.has(String(p).trim())) return String(p).trim();
+  return 'instagram';
+}
+
+/**
+ * منصة الحملة للمطابقة مع `User.socialPlatform` (وجهة social فقط).
+ * الأولوية: الحقل المخزّن → الرابط → منصة المشترك المستهدَف عند غياب الرابط.
+ */
+function effectiveCampaignSocialPlatformIdForUserMatch(campaign) {
+  if (!campaign) return null;
+  const dk = String(campaign.destinationKind || 'social').trim();
+  if (dk !== 'social') return null;
+  const sp = campaign.socialPlatform;
+  if (sp != null && String(sp).trim() && PLATFORM_ID_SET.has(String(sp).trim())) {
+    return String(sp).trim().toLowerCase();
+  }
+  const fromLink = inferSocialPlatformIdFromUrl(campaign.link);
+  if (fromLink) return fromLink;
+  const linkEmpty = !(campaign.link && String(campaign.link).trim());
+  if (linkEmpty) {
+    const tu = campaign.targetUserId;
+    if (tu && typeof tu === 'object' && !(tu instanceof mongoose.Types.ObjectId)) {
+      const ps = tu.socialPlatform;
+      if (ps != null && String(ps).trim() && PLATFORM_ID_SET.has(String(ps).trim())) return String(ps).trim();
+    }
+  }
+  return null;
+}
+
+function subscriberCampaignPlatformMismatchMessageAr(campaignPlatformId, subscriberPlatformId) {
+  const campLabel = PLATFORM_META_BY_ID[campaignPlatformId]?.labelAr || campaignPlatformId || 'هذه المنصة';
+  const subLabel = PLATFORM_META_BY_ID[subscriberPlatformId]?.labelAr || subscriberPlatformId || 'حسابك';
+  return `هذه الحملة مخصّصة لمنصة «${campLabel}»، بينما حسابك المسجّل لدينا على «${subLabel}». لا يمكن المشاركة إلا في حملات تتوافق مع منصة حسابك. إذا كان نشاطك على «${campLabel}»، عدّل منصة واسم المستخدم في اشتراكك أو تواصل مع المنصة.`;
+}
+
 /** رابط يفتحه المشارك لتنفيذ المتابعة/التفاعل — الرابط المحفوظ للحملة أولاً ثم حساب targetUserId */
 function portalParticipationOpenUrlFromCampaign(c) {
   const L = String(c.link || '').trim();
@@ -1159,6 +1218,11 @@ const campaignSchema = new mongoose.Schema({
     ref: 'ClientServiceRequest',
     default: null,
   },
+  /**
+   * منصة التواصل التي تُنفَّذ عليها الحملة (لوجهة social فقط).
+   * إن تُرك فارغاً يُستنتَج من الرابط أو من منصة المشترك المستهدَف عند غياب رابط https.
+   */
+  socialPlatform: { type: String, enum: PLATFORM_IDS },
 });
 campaignSchema.index({ linkedClientServiceRequestId: 1 }, { sparse: true });
 const Campaign = mongoose.model('Campaign', campaignSchema);
@@ -3409,6 +3473,10 @@ app.post('/api/campaigns', async (req, res) => {
     } = req.body;
     const kinds = ['social', 'website', 'store', 'other'];
     const dk = kinds.includes(destinationKind) ? destinationKind : 'social';
+    const socialPlatformRaw =
+      req.body?.socialPlatform != null ? String(req.body.socialPlatform).trim().toLowerCase() : '';
+    const socialPlatformField =
+      dk === 'social' && socialPlatformRaw && PLATFORM_ID_SET.has(socialPlatformRaw) ? socialPlatformRaw : undefined;
     const dl =
       destinationLabel != null ? String(destinationLabel).trim().slice(0, 160) : '';
     const ds =
@@ -3488,6 +3556,7 @@ app.post('/api/campaigns', async (req, res) => {
         : {}),
       ...(targetUserId ? { targetUserId } : {}),
       ...(linkedFinal.value ? { linkedClientServiceRequestId: linkedFinal.value } : {}),
+      ...(socialPlatformField ? { socialPlatform: socialPlatformField } : {}),
     });
     res.status(201).json({ ok: true, campaign });
   } catch (err) {
@@ -3562,6 +3631,18 @@ app.patch('/api/campaigns/:campaignId', async (req, res) => {
       const bk = String(body.billingKind ?? '').trim();
       if (!billingKinds.includes(bk)) return res.status(400).json({ error: 'التصنيف التجاري غير صالح' });
       $set.billingKind = bk;
+    }
+    if ('socialPlatform' in body) {
+      const raw = body.socialPlatform;
+      if (raw == null || String(raw).trim() === '') {
+        $unset.socialPlatform = '';
+      } else {
+        const pid = String(raw).trim().toLowerCase();
+        if (!PLATFORM_ID_SET.has(pid)) {
+          return res.status(400).json({ error: 'منصة الحملة غير صالحة' });
+        }
+        $set.socialPlatform = pid;
+      }
     }
     if ('status' in body) {
       const st = String(body.status ?? '').trim();
@@ -3678,9 +3759,23 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
       return { ok: false, status: 400, message: 'كود التحقق لا يطابق هذا المشترك وهذه الحملة' };
     }
   }
-  const campaign = await Campaign.findById(campaignId);
+  const campaign = await Campaign.findById(campaignId).populate('targetUserId', 'socialPlatform instagramUsername');
   if (!campaign || campaign.status === 'completed') {
     return { ok: false, status: 400, message: 'الحملة غير متاحة' };
+  }
+
+  const participant = await User.findById(userId).select('socialPlatform').lean();
+  if (!participant) {
+    return { ok: false, status: 400, message: 'المستخدم غير موجود' };
+  }
+  const reqPlat = effectiveCampaignSocialPlatformIdForUserMatch(campaign);
+  const userPlat = subscriberStoredSocialPlatformId(participant);
+  if (reqPlat && userPlat !== reqPlat) {
+    return {
+      ok: false,
+      status: 403,
+      message: subscriberCampaignPlatformMismatchMessageAr(reqPlat, userPlat),
+    };
   }
 
   const pts = effectiveCampaignPoints(campaign);
@@ -3784,10 +3879,11 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
     if (!t || t.length < 24) {
       return res.status(400).json({ error: 'معامل الدخول مطلوب' });
     }
-    const user = await User.findOne({ portalToken: t }).lean();
+    const user = await User.findOne({ portalToken: t }).select('city interests socialPlatform').lean();
     if (!user) return res.status(404).json({ error: 'الجلسة غير صالحة' });
 
     const userId = user._id;
+    const userPlat = subscriberStoredSocialPlatformId(user);
     const joined = await Interaction.find({ userId }).select('campaignId').lean();
     const joinedIds = new Set(joined.map((x) => String(x.campaignId)));
 
@@ -3816,6 +3912,8 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
       if (joinedIds.has(String(c._id))) return false;
       const tgt = Number(c.targetCount);
       if (Number.isFinite(tgt) && tgt > 0 && (c.currentCount ?? 0) >= tgt) return false;
+      const reqPlat = effectiveCampaignSocialPlatformIdForUserMatch(c);
+      if (reqPlat && userPlat !== reqPlat) return false;
       return true;
     });
 
@@ -3825,37 +3923,44 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
       .lean();
     const participationLinkLockedIds = new Set(issuedClaims.map((x) => String(x.campaignId)));
 
-    const rows = available.map((c) => ({
-      id: String(c._id),
-      title: c.title || '',
-      type: c.type || '',
-      typeAr: campaignInteractionTypeAr(c.type),
-      city: c.city || '',
-      interest: c.interest || '',
-      destinationKind: c.destinationKind || 'social',
-      destinationKindAr: portalCampaignDestinationAr(c.destinationKind || 'social'),
-      destinationLabel: (c.destinationLabel || '').trim(),
-      link: participationLinkLockedIds.has(String(c._id)) ? '' : c.link || '',
-      participationLinkLocked: participationLinkLockedIds.has(String(c._id)),
-      participationUrl: participationLinkLockedIds.has(String(c._id))
-        ? ''
-        : participationTrackedPortalHref(req, c, userId),
-      participationManualNoteAr: portalCompletionNoteArForCampaignType(c.type),
-      participationOpenLabelAr: portalParticipationOpenLabelAr(c.type),
-      participationReturnHintAr: portalParticipationReturnHintAr(c.type, c.destinationKind),
-      targetSubscriberHint: portalCampaignTargetSubscriberHint(c.targetUserId),
-      progressLabel: `${c.currentCount ?? 0} / ${Number.isFinite(Number(c.targetCount)) ? c.targetCount : '—'}`,
-      recommended: campaignMatchesAudience(c),
-      billingHintAr: campaignBillingSubscriberHintAr(c.billingKind),
-      pointsAwarded: effectiveCampaignPoints(c),
-      subscriberPointsCost: effectiveCampaignSubscriberCost(c),
-    }));
+    const rows = available.map((c) => {
+      const campPlatEff = effectiveCampaignSocialPlatformIdForUserMatch(c);
+      return {
+        id: String(c._id),
+        title: c.title || '',
+        type: c.type || '',
+        typeAr: campaignInteractionTypeAr(c.type),
+        city: c.city || '',
+        interest: c.interest || '',
+        destinationKind: c.destinationKind || 'social',
+        destinationKindAr: portalCampaignDestinationAr(c.destinationKind || 'social'),
+        destinationLabel: (c.destinationLabel || '').trim(),
+        link: participationLinkLockedIds.has(String(c._id)) ? '' : c.link || '',
+        participationLinkLocked: participationLinkLockedIds.has(String(c._id)),
+        participationUrl: participationLinkLockedIds.has(String(c._id))
+          ? ''
+          : participationTrackedPortalHref(req, c, userId),
+        participationManualNoteAr: portalCompletionNoteArForCampaignType(c.type),
+        participationOpenLabelAr: portalParticipationOpenLabelAr(c.type),
+        participationReturnHintAr: portalParticipationReturnHintAr(c.type, c.destinationKind),
+        targetSubscriberHint: portalCampaignTargetSubscriberHint(c.targetUserId),
+        progressLabel: `${c.currentCount ?? 0} / ${Number.isFinite(Number(c.targetCount)) ? c.targetCount : '—'}`,
+        recommended: campaignMatchesAudience(c),
+        billingHintAr: campaignBillingSubscriberHintAr(c.billingKind),
+        pointsAwarded: effectiveCampaignPoints(c),
+        subscriberPointsCost: effectiveCampaignSubscriberCost(c),
+        campaignSocialPlatform: campPlatEff || '',
+        campaignSocialPlatformLabelAr: campPlatEff ? PLATFORM_META_BY_ID[campPlatEff].labelAr : '',
+      };
+    });
 
     rows.sort((a, b) => Number(b.recommended) - Number(a.recommended));
 
     res.json({
       ok: true,
       defaultPointsPerInteraction: POINTS_PER_INTERACTION,
+      subscriberSocialPlatform: userPlat,
+      subscriberSocialPlatformLabelAr: PLATFORM_META_BY_ID[userPlat]?.labelAr || userPlat,
       campaigns: rows,
     });
   } catch (err) {
@@ -3899,7 +4004,7 @@ app.post('/api/portal/verify-participation-code', async (req, res) => {
     if (!vc) {
       return res.status(400).json({ error: 'أدخل كود التحقق' });
     }
-    const user = await User.findOne({ portalToken: t }).select('_id').lean();
+    const user = await User.findOne({ portalToken: t }).select('_id socialPlatform').lean();
     if (!user) return res.status(404).json({ error: 'الجلسة غير صالحة' });
 
     const claim = await CampaignClaim.findOne({ userId: user._id, campaignId, code: vc }).lean();
@@ -3911,6 +4016,12 @@ app.post('/api/portal/verify-participation-code', async (req, res) => {
       .lean();
     if (!campaign || campaign.status === 'completed') {
       return res.status(400).json({ error: 'الحملة غير متاحة' });
+    }
+
+    const reqPlat = effectiveCampaignSocialPlatformIdForUserMatch(campaign);
+    const userPlat = subscriberStoredSocialPlatformId(user);
+    if (reqPlat && userPlat !== reqPlat) {
+      return res.status(403).json({ error: subscriberCampaignPlatformMismatchMessageAr(reqPlat, userPlat) });
     }
 
     const participationUrl = participationTrackedPortalHref(req, campaign, user._id);
@@ -4182,12 +4293,20 @@ app.post('/api/campaigns/:campaignId/verification-code', async (req, res) => {
     if (!mongoose.isValidObjectId(campaignId) || !mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ error: 'معرّف الحملة أو المشترك غير صالح' });
     }
-    const campaign = await Campaign.findById(campaignId).lean();
+    const campaign = await Campaign.findById(campaignId)
+      .populate('targetUserId', 'socialPlatform instagramUsername')
+      .lean();
     if (!campaign || campaign.status === 'completed') {
       return res.status(400).json({ error: 'الحملة غير متاحة أو منتهية' });
     }
-    const user = await User.findById(userId).lean();
+    const user = await User.findById(userId).select('socialPlatform instagramUsername').lean();
     if (!user) return res.status(400).json({ error: 'المشترك غير موجود' });
+
+    const reqPlat = effectiveCampaignSocialPlatformIdForUserMatch(campaign);
+    const userPlat = subscriberStoredSocialPlatformId(user);
+    if (reqPlat && userPlat !== reqPlat) {
+      return res.status(403).json({ error: subscriberCampaignPlatformMismatchMessageAr(reqPlat, userPlat) });
+    }
 
     let claim = await CampaignClaim.findOne({ userId, campaignId });
     if (!claim) {

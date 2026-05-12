@@ -1060,6 +1060,20 @@
               <option value="other">أخرى</option>
             </select>
           </div>
+          <div id="wrapCampSocialPlatform" style="grid-column:1/-1">
+            <label for="cSocialPlatform">منصة الحملة (عند وجهة «منصة تواصل»)</label>
+            <select id="cSocialPlatform">
+              <option value="">تلقائي — من الرابط أو من المشترك المستهدَف عند غياب رابط https</option>
+              <option value="instagram">إنستغرام</option>
+              <option value="tiktok">تيك توك</option>
+              <option value="snapchat">سناب شات</option>
+              <option value="twitter">إكس (تويتر)</option>
+              <option value="youtube">يوتيوب</option>
+            </select>
+            <p class="hint" style="margin-top:0.35rem;margin-bottom:0">
+              يُمنع تسجيل المشاركة إذا لم تطابق منصة حساب المشترك منصة الحملة (مثلاً حملة إكس مع مشترك إنستغرام). عند «تلقائي» يُستنتَج من نطاق الرابط (مثل instagram.com، x.com، tiktok.com…).
+            </p>
+          </div>
           <div style="grid-column:1/-1">
             <label for="cDestinationLabel">اسم الموقع / المتجر (اختياري)</label>
             <input id="cDestinationLabel" type="text" placeholder="مثال: متجري على سلة، أو example.com" spellcheck="false" />
@@ -1332,6 +1346,9 @@
         document.getElementById('editCampaignId').value = String(c._id);
         document.getElementById('cTitle').value = c.title || '';
         document.getElementById('cDestinationKind').value = c.destinationKind || 'social';
+        const csp = document.getElementById('cSocialPlatform');
+        if (csp) csp.value = c.socialPlatform && String(c.socialPlatform).trim() ? String(c.socialPlatform).trim() : '';
+        syncCampSocialPlatformVisibility();
         document.getElementById('cDestinationLabel').value = c.destinationLabel || '';
         document.getElementById('cType').value = c.type || 'visit';
         document.getElementById('cCity').value = c.city || '';
@@ -2998,7 +3015,16 @@
       const st = document.getElementById('cStatus');
       if (st) st.value = 'active';
       showFlash(document.getElementById('campFlash'), '');
+      syncCampSocialPlatformVisibility();
     });
+
+    function syncCampSocialPlatformVisibility() {
+      const w = document.getElementById('wrapCampSocialPlatform');
+      const dk = document.getElementById('cDestinationKind')?.value || 'social';
+      if (w) w.style.display = dk === 'social' ? '' : 'none';
+    }
+    document.getElementById('cDestinationKind')?.addEventListener('change', syncCampSocialPlatformVisibility);
+    syncCampSocialPlatformVisibility();
 
     document.getElementById('formCampaign').onsubmit = async (ev) => {
       ev.preventDefault();
@@ -3033,6 +3059,13 @@
           billingKind: document.getElementById('cBillingKind').value,
           status,
         };
+        if (destinationKind === 'social') {
+          const sp = document.getElementById('cSocialPlatform')?.value.trim() || '';
+          if (editId) payload.socialPlatform = sp;
+          else if (sp) payload.socialPlatform = sp;
+        } else if (editId) {
+          payload.socialPlatform = '';
+        }
         if (editId) {
           payload.pointsPerInteraction = ppiRaw ? Number(ppiRaw) : null;
           payload.subscriberPointsCost = subCostRaw ? Number(subCostRaw) : null;
@@ -3050,6 +3083,7 @@
           updateLinkedClientRequestCampaignUi();
           document.getElementById('cTarget').value = '10';
           document.getElementById('cStatus').value = 'active';
+          syncCampSocialPlatformVisibility();
         } else {
           if (ppiRaw) payload.pointsPerInteraction = Number(ppiRaw);
           if (subCostRaw) payload.subscriberPointsCost = Number(subCostRaw);
