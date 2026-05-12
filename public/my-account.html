@@ -659,7 +659,7 @@
         <a class="public-customer-nav__pill" href="/subscriber-login">دخول حسابي</a>
         <span class="public-customer-nav__pill public-customer-nav__pill--current">حسابي</span>
       </span>
-      <a href="/api/portal/logout" data-copy="navLogout">خروج أو حساب آخر</a>
+      <a href="/api/portal/logout" id="portalLogoutLink" data-copy="navLogout">خروج أو حساب آخر</a>
     </div>
   </nav>
   <div class="wrap">
@@ -776,7 +776,7 @@
               <div id="portalSvcPricingTotals" hidden></div>
               <p class="hint" style="margin-top: 0.35rem; margin-bottom: 0; font-size: 0.78rem; line-height: 1.55">
                 اضغط عنوان كل منصة (الأيقونة والاسم) لعرض الخدمات أو إخفائها. الخيارات مرتبة تحت <strong>أيقونة كل منصة</strong>. الإرشادات تقريبية؛ لخدمات ذات جدول كمية يظهر تقدير
-                <strong>ريال + نقاط (⌈كمية÷2⌉)</strong>. عند الإرسال من «حسابي» يجب أن يكون <strong>رصيد نقاطك ≥ مجموع نقاط التقدير</strong> ليقبل الطلب (نفس طريقة احتساب المشاركة بالكمية). التنفيذ النهائي يبقى بتوافق الفريق.
+                <strong>ريال + نقاط مقترحة (⌈كمية÷2⌉)</strong>. إذا اخترت <strong>نقاط</strong> أو <strong>الخدمة المدفوعة والنقاط معاً</strong>، يجب عند الإرسال من «حسابي» أن يكون <strong>رصيد نقاطك ≥ مجموع نقاط التقدير</strong>. إذا اخترت <strong>خدمة مدفوعة</strong> أو <strong>أخرى</strong> فلا يُشترط رصيد نقاط — التسوية بالريال مع الفريق. التنفيذ النهائي يبقى بتوافق الفريق.
               </p>
             </div>
             <div>
@@ -816,7 +816,7 @@
 
       <section class="card portal-view-section" id="secActivity">
         <h2 data-copy="secActivityTitle">سجل التحركات</h2>
-        <p class="hint" data-copy-html="secActivityHint">يُرتَّب من الأحدث إلى الأقدم. <strong>مدفوع لك</strong> تعني دفعة سجّلها الفريق لك. <strong>مشاركة (مجانية لك)</strong> تعني قيمة الفعل لا يتحملها المشترك — بينما قد تكون الحملة نفسها مدفوعة للمنصة من المعلن.</p>
+        <p class="hint" data-copy-html="secActivityHint">يُرتَّب من الأحدث إلى الأقدم. <strong>لا يوجد عمود مستقل باسم «خصم»:</strong> الخصم يظهر كصف في «التصنيف» باسم «خصم» وبقيمة سالبة في عمود النقاط. صفوف «طلب أرسلته» قد تعرض تقديراً أو شرحاً في عمود النقاط؛ الخصم الفعلي يُسجَّل بعد ربط الحملة بالطلب وتسجيل مشاركات (وليس من ضغطات الرابط فقط). <strong>مدفوع لك</strong> تعني دفعة سجّلها الفريق لك. <strong>مشاركة (مجانية لك)</strong> تعني قيمة الفعل لا يتحملها المشترك — بينما قد تكون الحملة نفسها مدفوعة للمنصة من المعلن.</p>
         <div class="portal-table-scroll" style="overflow:auto">
           <table dir="rtl">
             <thead>
@@ -824,7 +824,7 @@
                 <th data-copy="activityThDate">التاريخ</th>
                 <th data-copy="activityThBucket">التصنيف</th>
                 <th data-copy="activityThDetail">الحدث والتفاصيل</th>
-                <th data-copy="activityThPoints">نقاط</th>
+                <th data-copy="activityThPoints">النقاط (والخصم)</th>
                 <th data-copy="activityThAmount">مبلغ (ر.س)</th>
               </tr>
             </thead>
@@ -885,13 +885,31 @@
   <script src="/js/public-copy.js"></script>
   <script src="/js/instagram-qty-pricing.js"></script>
   <script>
+    const RW_PORTAL_SESSION_T = 'rw_portal_session_t';
     function qs(name) {
       return new URLSearchParams(window.location.search).get(name);
     }
-    /** إن وُجد ?t= في العنوان (رابط من الفريق) يُفضَّل تمريره حتى يثبت الخادم الجلسة ثم يعيد التوجيه بدون المعرّف */
+    /** يُثبِّت رمز البوابة في الجلسة ثم يُنظِّف العنوان بدون إعادة تحميل — كي تعمل طلبات API حتى إذا لم يُرسَل الكوكي مع fetch في بعض المتصفحات */
+    (function portalSessionBootstrap() {
+      try {
+        const t = qs('t');
+        if (t && t.length >= 24) {
+          sessionStorage.setItem(RW_PORTAL_SESSION_T, t);
+          const u = new URL(window.location.href);
+          u.searchParams.delete('t');
+          window.history.replaceState(null, '', u.pathname + u.search + u.hash);
+        }
+      } catch (e) {}
+    })();
+    /** يمرِّر t في كل استدعاء API: من العنوان أو من التخزين الجلسي (بعد الدخول بالرمز أو بعد لصق الرابط) */
     function portalQuerySuffix() {
       const t = qs('t');
-      return t && t.length >= 24 ? `t=${encodeURIComponent(t)}` : '';
+      if (t && t.length >= 24) return `t=${encodeURIComponent(t)}`;
+      try {
+        const st = sessionStorage.getItem(RW_PORTAL_SESSION_T);
+        if (st && String(st).trim().length >= 24) return `t=${encodeURIComponent(String(st).trim())}`;
+      } catch (e) {}
+      return '';
     }
     function portalApiUrl(basePath) {
       const q = portalQuerySuffix();
@@ -951,6 +969,11 @@
       if (backBtn) backBtn.addEventListener('click', closePortalAccountDetail);
     }
     wirePortalAccountHub();
+    document.getElementById('portalLogoutLink')?.addEventListener('click', () => {
+      try {
+        sessionStorage.removeItem(RW_PORTAL_SESSION_T);
+      } catch (e) {}
+    });
     function campEmptyLabel() {
       try {
         const x = window.__PUBLIC_COPY__?.myAccount?.campOptionEmpty;
@@ -1425,7 +1448,13 @@
         return;
       }
       panel.hidden = false;
-      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">(يجب أن يغطيها رصيد نقاطك ليقبل إرسال الطلب من حسابي)</span>`;
+      const kindEl = document.getElementById('portalSvcKind');
+      const rk = kindEl ? String(kindEl.value || '').trim() : '';
+      const needPtsBal = rk === 'points' || rk === 'both';
+      const ptsNote = needPtsBal
+        ? '(يجب أن يغطيها رصيد نقاطك ليقبل إرسال الطلب من «حسابي».)'
+        : '(رقم النقاط مرجعي للمنظومة؛ طلب «خدمة مدفوعة» لا يشترط رصيد نقاط عند الإرسال.)';
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصة)</strong> · ${totalSar} ر.س · نقاط مقترحة ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.74rem">${ptsNote}</span>`;
     }
 
     function showPortalSvcFlash(ok, msg) {
@@ -1625,7 +1654,15 @@
         tbAct.innerHTML = acts.length
           ? acts
               .map((row) => {
-                const pts = row.pointsDelta != null ? String(row.pointsDelta) : '—';
+                const ptsHint =
+                  row.pointsColumnHintAr != null && String(row.pointsColumnHintAr).trim()
+                    ? String(row.pointsColumnHintAr).trim()
+                    : '';
+                const pts = ptsHint
+                  ? `<span style="font-size:0.72rem;line-height:1.45;display:inline-block;max-width:11rem;color:var(--muted);white-space:normal">${escapeHtml(ptsHint)}</span>`
+                  : row.pointsDelta != null
+                    ? escapeHtml(String(row.pointsDelta))
+                    : '—';
                 const amt =
                   row.amountSar != null && row.amountSar !== ''
                     ? Number(row.amountSar).toLocaleString('ar-SA', { maximumFractionDigits: 2 })
@@ -1634,7 +1671,7 @@
               <td>${escapeHtml(fmtDate(row.at))}</td>
               <td style="white-space:nowrap;font-size:0.78rem">${escapeHtml(row.bucketAr || '')}</td>
               <td><strong>${escapeHtml(row.headlineAr || '')}</strong><div style="font-size:0.78rem;color:var(--muted);margin-top:0.25rem;line-height:1.45">${escapeHtml(row.detailAr || '')}</div></td>
-              <td class="mono">${escapeHtml(pts)}</td>
+              <td class="mono">${pts}</td>
               <td class="mono">${escapeHtml(amt)}</td>
             </tr>`;
               })
@@ -1704,6 +1741,8 @@
       loadPortalSvcOptions();
       fetchAndPaintPortalSummary();
     })();
+
+    document.getElementById('portalSvcKind')?.addEventListener('change', updatePortalSvcPricingTotals);
 
     document.getElementById('partCampSelect').addEventListener('change', updateParticipateDetail);
     document.getElementById('btnPortalVerifyParticipationLink').onclick = async () => {
@@ -1826,19 +1865,7 @@
         if (v) serviceQuantities[cb.value] = Math.floor(Number(v));
       });
 
-      const pq = computePortalSvcQtyTotals();
-      if (pq.nLines > 0 && pq.totalPts > 0) {
-        const statEl = document.getElementById('statPoints');
-        const bal = Math.max(0, Math.floor(Number(String(statEl?.textContent ?? '0').trim())));
-        if (bal < pq.totalPts) {
-          showPortalSvcFlash(
-            false,
-            `رصيد نقاطك الحالي (${bal}) لا يكفي لتقدير هذا الطلب (${pq.totalPts} نقطة — ⌈كمية÷2⌉). خفّف الكميات أو زد رصيدك ثم أعد المحاولة.`,
-          );
-          return;
-        }
-      }
-
+      /** التحقق من رصيد النقاط يتم في الخادم فقط حسب نوع الطلب — يجنب تعارض النسخ/cache مع المتصفح */
       const payload = { requestKind, title, details, requestedServices, serviceQuantities };
       if (name) payload.name = name;
       if (phoneNorm) payload.phone = phoneNorm;

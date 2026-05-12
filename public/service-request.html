@@ -843,6 +843,11 @@
       host.addEventListener('input', (ev) => {
         if (ev.target.matches('.svc-qty-input')) updateSvcPricingTotals();
       });
+      const srKindEl = document.getElementById('srKind');
+      if (srKindEl && srKindEl.dataset.pricingWire !== '1') {
+        srKindEl.dataset.pricingWire = '1';
+        srKindEl.addEventListener('change', updateSvcPricingTotals);
+      }
     }
 
     function syncSvcQtyVisibility() {
@@ -896,7 +901,13 @@
         return;
       }
       panel.hidden = false;
-      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصات المعروضة)</strong> · ${totalSar} ر.س · نقاط ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.76rem">(إذا أرفقت رابط «حسابي» يُشترط أن يغطي رصيد نقاطك هذا المجموع ليقبل الطلب)</span>`;
+      const kindEl = document.getElementById('srKind');
+      const rk = kindEl ? String(kindEl.value || '').trim() : '';
+      const needPtsBal = rk === 'points' || rk === 'both';
+      const portalNote = needPtsBal
+        ? '(إذا أرفقت رابط «حسابي» يُشترط أن يغطي رصيد نقاطك هذا المجموع ليقبل الطلب.)'
+        : '(رقم النقاط مرجعي؛ طلب «خدمة مدفوعة» لا يشترط رصيد نقاط عند الإرسال ما لم تختر نوعاً يعتمد النقاط.)';
+      panel.innerHTML = `<strong>مجموع التقدير (حسب المنصات المعروضة)</strong> · ${totalSar} ر.س · نقاط ⌈كمية÷2⌉: ${totalPts} <span style="color:var(--muted);font-weight:600;font-size:0.76rem">${portalNote}</span>`;
     }
 
     function showFlash(ok, msg) {

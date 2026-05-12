@@ -570,7 +570,7 @@ async function getEnabledClientServiceIdFilterSet() {
 }
 
 const QTY_PRICING_NOTE_AR =
-  'تقدير الكمية (إنستغرام أو تويتر/إكس أو تيك توك أو سناب شات حسب الخيار): السعر ≈ (الكمية÷1000)×سعر الألف بالجدول؛ نقاط = ⌈الكمية÷2⌉. عند الإرسال مرتبطاً بحساب «حسابي» يُشترط ألا يقل الرصيد عن مجموع النقاط؛ التنفيذ بتوافق الفريق.';
+  'تقدير الكمية (إنستغرام أو تويتر/إكس أو تيك توك أو سناب حسب الخيار): السعر ≈ (الكمية÷1000)×سعر الألف بالجدول؛ نقاط مقترحة = ⌈الكمية÷2⌉. من «حسابي»: نوع طلب «نقاط» أو «خدمة مدفوعة والنقاط معاً» يشترط ألا يقل رصيد النقاط عن المجموع؛ «خدمة مدفوعة» أو «أخرى» لا يشترط رصيد نقاط عند الإرسال — التسوية بالريال مع الفريق. التنفيذ بتوافق الفريق.';
 
 function normalizeServiceQuantitiesBody(raw) {
   const out = {};
@@ -1304,6 +1304,8 @@ const clientServiceRequestSchema = new mongoose.Schema(
       enum: ['pending', 'completed', 'cancelled'],
       default: 'pending',
     },
+    /** مجموع نقاط خُصمت من صاحب الطلب مع كل «تسجيل مشاركة» على حملة مرتبطة بهذا الطلب */
+    pointsDebitedForFulfillment: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
@@ -1311,6 +1313,129 @@ clientServiceRequestSchema.index({ createdAt: -1 });
 clientServiceRequestSchema.index({ userId: 1, createdAt: -1 });
 clientServiceRequestSchema.index({ phone: 1, createdAt: -1 });
 const ClientServiceRequest = mongoose.model('ClientServiceRequest', clientServiceRequestSchema);
+
+/**
+ * إجمالي نقاط الطلب للخصم التدريجي: الحقل المجمّع أو جمع أسطر التقدير إن كان الحقل صفراً/فارغاً.
+ */
+function effectiveServiceRequestEstimatedPoints(csrLean) {
+  const direct = Math.floor(Number(csrLean?.estimatedTotalPoints));
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const lines = Array.isArray(csrLean?.pricingEstimateLines) ? csrLean.pricingEstimateLines : [];
+  let sum = 0;
+  for (const ln of lines) {
+    const p = Math.floor(Number(ln?.pointsRequired));
+    if (Number.isFinite(p) && p > 0) sum += p;
+  }
+  if (sum > 0) return sum;
+  /** طلبات قديمة أو مسارات بدون أسطر كمية: يوجد تقدير ر.س لكن نقاط مجمّعة صفر — نشتق حداً أدنى للخصم التدريجي حتى لا يبقى صفراً دائماً */
+  const sar = Number(csrLean?.estimatedTotalSar);
+  if (Number.isFinite(sar) && sar > 0) {
+    if (sar < 1) return Math.max(1, Math.ceil(sar * 100));
+    return Math.min(100000, Math.ceil(sar));
+  }
+  return 0;
+}
+
+/**
+ * نقاط نخصمها من صاحب طلب الخدمة عن هذه الخطوة من التنفيذ — ⌈إجمالي النقاط ÷ هدف الحملة⌉ مع احترام المتبقي.
+ * @param {number} effectiveTotalPts ناتج effectiveServiceRequestEstimatedPoints (لا يعتمد على الحقل المخزّن وحده)
+ */
+function computeLinkedServiceRequestStepDebitPoints(campaignDoc, csrLean, effectiveTotalPts) {
+  const totalPts = Math.floor(Number(effectiveTotalPts));
+  if (!Number.isFinite(totalPts) || totalPts <= 0) return 0;
+  const debitedSoFar = Math.floor(Number(csrLean.pointsDebitedForFulfillment)) || 0;
+  if (debitedSoFar >= totalPts) return 0;
+  const targetCap = Math.floor(Number(campaignDoc.targetCount));
+  if (!Number.isFinite(targetCap) || targetCap < 1) return 0;
+  const perSlot = Math.ceil(totalPts / targetCap);
+  const remaining = Math.max(0, totalPts - debitedSoFar);
+  return Math.min(perSlot, remaining);
+}
+
+/**
+ * بعد حفظ تقدّم الحملة: خصم من رصيد مُرسِل الطلب (userId الطلب أو targetUserId الحملة) وتسجيل حركة سالبة في السجل.
+ * @returns {{ ok: true, debit: number } | { ok: false, message: string }}
+ */
+async function applyLinkedServiceRequestFulfillmentDebitForCampaign(campaignDoc) {
+  const csrRaw = campaignDoc.linkedClientServiceRequestId;
+  if (!csrRaw || !mongoose.isValidObjectId(String(csrRaw))) return { ok: true, debit: 0 };
+
+  const csrIdObj =
+    csrRaw instanceof mongoose.Types.ObjectId ? csrRaw : new mongoose.Types.ObjectId(String(csrRaw));
+
+  const csr = await ClientServiceRequest.findById(csrIdObj)
+    .select('userId estimatedTotalPoints estimatedTotalSar pointsDebitedForFulfillment title pricingEstimateLines')
+    .lean();
+  if (!csr) return { ok: true, debit: 0 };
+
+  const effectiveCap = effectiveServiceRequestEstimatedPoints(csr);
+  const debit = computeLinkedServiceRequestStepDebitPoints(campaignDoc, csr, effectiveCap);
+  if (debit <= 0) return { ok: true, debit: 0 };
+
+  let billUid = csr.userId ? String(csr.userId) : '';
+  if (!billUid && campaignDoc.targetUserId) {
+    const tu = campaignDoc.targetUserId;
+    billUid = tu instanceof mongoose.Types.ObjectId ? String(tu) : String(tu._id || tu || '');
+  }
+  if (!billUid || !mongoose.isValidObjectId(billUid)) return { ok: true, debit: 0 };
+
+  const safeTotal = Math.floor(Number(effectiveCap));
+  const numericCap = Number.isFinite(safeTotal) ? safeTotal : 0;
+
+  const csrUpdated = await ClientServiceRequest.findOneAndUpdate(
+    {
+      _id: csrIdObj,
+      $expr: {
+        $lte: [
+          { $add: [{ $toDouble: { $ifNull: ['$pointsDebitedForFulfillment', 0] } }, debit] },
+          numericCap,
+        ],
+      },
+    },
+    { $inc: { pointsDebitedForFulfillment: debit } },
+    { new: true }
+  ).lean();
+
+  if (!csrUpdated) {
+    return {
+      ok: false,
+      message:
+        'تعذّر خصم نقاط تنفيذ الطلب — وصل الخصم المسجَّل لسقف تقدير النقاط لهذا الطلب. راجع لوحة الفريق أو أعد ضبط العداد.',
+    };
+  }
+
+  const payer = await User.findOneAndUpdate(
+    { _id: billUid, points: { $gte: debit } },
+    { $inc: { points: -debit } },
+    { new: false }
+  ).lean();
+
+  if (!payer) {
+    await ClientServiceRequest.findByIdAndUpdate(csrIdObj, { $inc: { pointsDebitedForFulfillment: -debit } });
+    return {
+      ok: false,
+      message:
+        'رصيد نقاط صاحب الطلب غير كافٍ لتغطية خطوة التنفيذ — زِد رصيده أو علِّق التسجيل في الحملة مؤقتاً ثم أعد المحاولة.',
+    };
+  }
+
+  const campTitle = String(campaignDoc.title || '').trim().slice(0, 120);
+  const reqTitle = String(csr.title || '').trim().slice(0, 120);
+  const after = Math.floor(Number(csrUpdated.pointsDebitedForFulfillment)) || 0;
+  const noteParts = [
+    `خصم تنفيذ طلب خدمة مرتبط بحملة${campTitle ? ` «${campTitle}»` : ''}.`,
+    reqTitle ? `طلب: «${reqTitle}».` : '',
+    `−${debit} نقطة (المخصوم للطلب بعد هذه الخطوة: ${after} / ${numericCap}).`,
+  ];
+
+  await SubscriberPointsGrant.create({
+    userId: billUid,
+    points: -debit,
+    note: noteParts.filter(Boolean).join(' '),
+  });
+
+  return { ok: true, debit };
+}
 
 /** إخفاء جوال للعرض في بوابة العميل */
 function maskSaudiPhoneLast4(phone) {
@@ -1712,6 +1837,9 @@ app.get('/service-request', (_req, res) => {
 
 /** دخول المشترك فقط — بدون لوحة الفريق */
 app.get('/subscriber-login', (_req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'subscriber-login.html'));
 });
 
@@ -1727,17 +1855,19 @@ app.get('/panel', (_req, res) => {
   res.redirect(302, '/');
 });
 
-/** حساب العميل — جلسة HttpOnly؛ إن وُجد ?t= يُثبَّت الكوكي ثم يُزال من العنوان */
+/** حساب العميل — جلسة HttpOnly؛ رابط ?t= يُثبِّت الكوكي ويُعرض الصفحة مباشرة (بدون إزالة الرمز) حتى تُمرَّر مع طلبات fetch في كل المتصفحات */
 app.get('/my-account', (req, res) => {
   const fromQuery = String(req.query.t || '').trim();
   const fromCookie = readPortalSidCookie(req).trim();
   if (fromQuery.length >= 24) {
     appendPortalSessionCookie(res, fromQuery, req);
-    return res.redirect(302, '/my-account');
   }
-  if (fromCookie.length < 24) {
+  if (fromCookie.length < 24 && fromQuery.length < 24) {
     return res.redirect(302, '/subscriber-login');
   }
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
   res.sendFile(path.join(__dirname, 'public', 'my-account.html'));
 });
 
@@ -1816,7 +1946,10 @@ app.get('/go', async (req, res) => {
 
 /** منع كاش استجابات الـ API في المتصفح (لوحة التحكم تعتمد على GET حديث) */
 app.use('/api', (_req, res, next) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Vary', 'Cookie');
   next();
 });
 
@@ -2244,7 +2377,10 @@ app.post('/api/client/service-requests', async (req, res) => {
     const ptsNeed =
       ptsNeedRaw != null && Number.isFinite(Number(ptsNeedRaw)) ? Math.floor(Number(ptsNeedRaw)) : 0;
 
-    if (linkedViaPortal && userId && ptsNeed > 0) {
+    /** رصيد النقاط يُشترَط فقط لطلبات «نقاط» أو «مدفوعة + نقاط» — لا لـ«خدمة مدفوعة» وحدها */
+    const portalRequiresPointsBalance =
+      requestKind === 'points' || requestKind === 'both';
+    if (linkedViaPortal && userId && ptsNeed > 0 && portalRequiresPointsBalance) {
       const balRow = await User.findById(userId).select('points').lean();
       const bal = balRow ? Math.max(0, Math.floor(Number(balRow.points ?? 0))) : 0;
       if (bal < ptsNeed) {
@@ -2657,19 +2793,32 @@ app.get('/api/portal/summary', async (req, res) => {
     for (const g of pointsGrants) {
       const pts = Math.floor(Number(g.points)) || 0;
       const noteTr = String(g.note || '').trim();
-      const detailAr =
-        noteTr ?
-          [`+${pts} نقطة`, noteTr].join(' — ')
-        : `+${pts} نقطة — استلمت مكافئة من الفريق وأُضيفت إلى رصيدك.`;
-      portalActivities.push({
-        id: `points-grant:${String(g._id)}`,
-        at: g.createdAt,
-        bucketAr: 'مكافئة',
-        headlineAr: 'استلمت مكافئة نقاط',
-        detailAr,
-        pointsDelta: pts,
-        amountSar: null,
-      });
+      if (pts >= 0) {
+        const detailAr =
+          noteTr ?
+            [`+${pts} نقطة`, noteTr].join(' — ')
+          : `+${pts} نقطة — استلمت مكافئة من الفريق وأُضيفت إلى رصيدك.`;
+        portalActivities.push({
+          id: `points-grant:${String(g._id)}`,
+          at: g.createdAt,
+          bucketAr: 'مكافئة',
+          headlineAr: 'استلمت مكافئة نقاط',
+          detailAr,
+          pointsDelta: pts,
+          amountSar: null,
+        });
+      } else {
+        const abs = Math.abs(pts);
+        portalActivities.push({
+          id: `points-grant:${String(g._id)}`,
+          at: g.createdAt,
+          bucketAr: 'خصم',
+          headlineAr: 'خصم نقاط من رصيدك',
+          detailAr: noteTr ? `${noteTr} — −${abs} نقطة` : `−${abs} نقطة — خُصم من رصيدك.`,
+          pointsDelta: pts,
+          amountSar: null,
+        });
+      }
     }
 
     for (const sr of serviceRequests) {
@@ -2677,15 +2826,31 @@ app.get('/api/portal/summary', async (req, res) => {
       const shortTitle = String(sr.title || '').trim();
       const det = String(sr.details || '').trim();
       const labPart = labs.length ? `مجالات مرتبطة: ${labs.join('، ')}` : '';
+      const effectivePts = effectiveServiceRequestEstimatedPoints(sr);
       let pricingExtra = '';
-      if (
-        sr.estimatedTotalSar != null &&
-        sr.estimatedTotalPoints != null &&
-        Number(sr.estimatedTotalPoints) > 0
-      ) {
-        pricingExtra = `تقدير الكمية (حسب المنصة في الجدول): ~${sr.estimatedTotalSar} ر.س؛ نقاط ⌈كمية÷2⌉ = ${sr.estimatedTotalPoints} — عند الطلب من «حسابي» كان قبول الطلب يشترط رصيداً لا يقل عن مجموع النقاط؛ التنفيذ النهائي بتوافق الفريق.`;
+      if (sr.estimatedTotalSar != null && effectivePts > 0) {
+        const rkSr = String(sr.requestKind || '').trim();
+        const ptsGateSr =
+          rkSr === 'points' || rkSr === 'both'
+            ? 'عند الطلب من «حسابي» كان قبول هذا النوع يشترط ألا يقل رصيد نقاطك عن مجموع النقاط أعلاه.'
+            : 'رقم النقاط مرجعي للتتبع الداخلي للتنفيذ عبر الحملات؛ طلب «خدمة مدفوعة» لا يشترط تغطية هذا الرقم برصيد نقاطك عند الإرسال — التسوية بالريال مع الفريق.';
+        pricingExtra = `تقدير الكمية (حسب المنصة في الجدول): ~${sr.estimatedTotalSar} ر.س؛ نقاط ⌈كمية÷2⌉ = ${effectivePts} — ${ptsGateSr} التنفيذ النهائي بتوافق الفريق.`;
       }
       const statusAr = clientServiceFulfillmentLabelAr(sr.fulfillmentStatus);
+      const debitedSoFar = Math.floor(Number(sr.pointsDebitedForFulfillment)) || 0;
+      /** دائماً نعبّئ العمود حتى لا يبقى «—» دون سياق؛ لا يوجد عمود مستقل اسمه «خصم». */
+      let pointsColumnHintAr;
+      if (effectivePts > 0) {
+        const rkSr = String(sr.requestKind || '').trim();
+        const portalPtsGate =
+          rkSr === 'points' || rkSr === 'both'
+            ? 'عند الإنشاء طُلب أن يغطي رصيد نقاطك هذا التقدير.'
+            : 'لا يُشترط عند الإنشاء أن يغطي رصيد نقاطك هذا التقدير إذا كان الطلب «خدمة مدفوعة» أو «أخرى» — التسوية بالريال مع الفريق.';
+        pointsColumnHintAr = `تقدير الطلب ${effectivePts} نقطة — مخصوم تنفيذ حتى الآن: ${debitedSoFar}/${effectivePts}. ${portalPtsGate} الخصم الداخلي للمنظومة (إن وُجد) يظهر كصف «خصم» مع سالب بالنقاط عند «تسجيل مشاركة» على حملة مربوطة بهذا الطلب — لا يُحسب من ضغطات الرابط وحدها.`;
+      } else {
+        pointsColumnHintAr =
+          'لا يتوفر رقم نقاط مخزَّن بهذا الشكل لهذا الطلب فلا يُخصم طالب الخدمة آلياً من المنظومة حتى يُحدَّث الطلب بكميات/تقدير نقاط. إن ظهر رقم في النص فقط فقد يكون قديماً؛ أي خصم فعلي يُسجَّل كصف «خصم» مع سالب بالنقاط.';
+      }
       const detailAr = [
         shortTitle ? `العنوان: ${shortTitle}` : '',
         PORTAL_SERVICE_REQUEST_KIND_AR[sr.requestKind] || sr.requestKind,
@@ -2703,6 +2868,7 @@ app.get('/api/portal/summary', async (req, res) => {
         headlineAr: 'طلب خدمة أو نقاط من حسابي',
         detailAr: detailAr || '—',
         pointsDelta: null,
+        pointsColumnHintAr,
         amountSar: null,
       });
     }
@@ -2825,10 +2991,14 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
 
     let linkedClientServiceRequestId = '';
     let linkedClientServiceRequestSummaryAr = '';
+    let requesterDebitHintAr = '';
+
     if (c.linkedClientServiceRequestId) {
       linkedClientServiceRequestId = String(c.linkedClientServiceRequestId);
       const csr = await ClientServiceRequest.findById(c.linkedClientServiceRequestId)
-        .select('title details fulfillmentStatus createdAt')
+        .select(
+          'title details fulfillmentStatus createdAt userId estimatedTotalPoints estimatedTotalSar pointsDebitedForFulfillment pricingEstimateLines'
+        )
         .lean();
       if (csr) {
         const dt = csr.createdAt ? new Date(csr.createdAt).toLocaleDateString('ar-SA') : '';
@@ -2838,7 +3008,29 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
         linkedClientServiceRequestSummaryAr = [titleLine ? `«${titleLine}»` : '', dt ? `تاريخ الطلب: ${dt}` : '', st ? `حالة الطلب: ${st}` : '']
           .filter(Boolean)
           .join(' — ');
+
+        const eff = effectiveServiceRequestEstimatedPoints(csr);
+        const deb = Math.floor(Number(csr.pointsDebitedForFulfillment)) || 0;
+        const uid = csr.userId ? String(csr.userId) : '';
+        const tu = c.targetUserId ? String(c.targetUserId) : '';
+        const billOk =
+          (uid && mongoose.isValidObjectId(uid)) || (tu && mongoose.isValidObjectId(tu));
+        if (eff <= 0) {
+          requesterDebitHintAr =
+            'لا يوجد تقدير نقاط فعّال في الطلب ولا تقدير ر.س يُستخدم كأساس للخصم — لذلك لا يُخصم طالب الخدمة. أعد إرسال الطلب من «حسابي» مع خدمات تحتوي جدول كمية، أو تأكد أن الطلب يحفظ «تقدير نقاط» أو «تقدير ر.س» في القاعدة.';
+        } else if (!billOk) {
+          requesterDebitHintAr =
+            'التقدير موجود لكن لا يُعرف حساب من يُخصم: تأكد أن طلب العميل مُرسَل من «حسابي» (مرتبط بمستخدم) أو أنك أدخلت «معرّف مشترك مستهدَف» للحملة في لوحة الفريق.';
+        } else {
+          requesterDebitHintAr = `خصم طالب الخدمة (إن كان السيرفر محدّثاً على Render): التقدير الفعّال للطلب ${eff} نقطة؛ ما خُصم تنفيذاً حتى الآن ${deb} / ${eff}. الخصم لا يحدث من ضغطات الرابط، بل عندما يضغط كل مشترك «تسجيل مشاركتي» من صفحة حسابه بعد تنفيذ المطلوب.`;
+        }
+      } else {
+        requesterDebitHintAr =
+          'معرّف «مرجع طلب عميل» المحفوظ بالحملة لا يطابق طلباً في القاعدة — افتح «إنشاء حملة» واضبط مرجعاً صحيحاً أو احذف القيمة الخاطئة.';
       }
+    } else {
+      requesterDebitHintAr =
+        'لا يُخصم من طالب الخدمة تلقائياً ما دامت الحملة غير مربوطة بطلب عميل: من لوحة «إنشاء حملة» أدخل «مرجع طلب عميل» ثم انشر آخر كود على Render.';
     }
 
     const bk = c.billingKind || 'unspecified';
@@ -2858,12 +3050,13 @@ app.get('/api/campaign-portal/summary', async (req, res) => {
         billingKindAr,
         linkedClientServiceRequestId,
         linkedClientServiceRequestSummaryAr,
+        requesterDebitHintAr,
       },
       stats: {
         linkClicksTotal,
       },
       disclaimer:
-        'التقدّم يعتمد على تسجيل المشاركات في منصة «رواد الأعمال» وعلى ضغطات رابط التتبع؛ لا يثبت ذلك وحده كل تفاعل على شبكة خارجية أو متجر بدون تكامل إضافي.',
+        'التقدّم يعتمد على تسجيل المشاركات في منصة «رواد الأعمال» وعلى ضغطات رابط التتبع؛ لا يثبت ذلك وحده كل تفاعل على شبكة خارجية أو متجر بدون تكامل إضافي. صندوق «خصم طالب الخدمة» أعلاه يشرح إن كان الخصم التلقائي مفعّلاً من الناحية الفنية.',
     };
     res.json(payload);
   } catch (err) {
@@ -3036,6 +3229,11 @@ app.post('/api/campaigns', async (req, res) => {
     const parsedSubCost = parseSubscriberPointsCostInput(subCostIn);
     if (!parsedSubCost.ok) return res.status(400).json({ error: parsedSubCost.error });
 
+    /** يطابق PATCH والواجهة — تجنّب targetCount غير صالح أو null في DB فيُسبب إكمالاً خاطئاً (>= null يُعامل كـ >= 0) */
+    const tcFloored = Math.floor(Number(targetCount));
+    const targetCountSafe =
+      Number.isFinite(tcFloored) && tcFloored >= 1 ? tcFloored : 10;
+
     let targetUserId = null;
     const tuid =
       targetUserIdRaw != null && String(targetUserIdRaw).trim() ? String(targetUserIdRaw).trim() : '';
@@ -3053,6 +3251,27 @@ app.post('/api/campaigns', async (req, res) => {
     const linkedResolved = await resolveLinkedClientServiceRequestId(linkedReqRaw, targetUserId);
     if (!linkedResolved.ok) return res.status(400).json({ error: linkedResolved.error });
 
+    let linkedFinal = linkedResolved;
+    if (!linkedFinal.value && targetUserId) {
+      const pendCount = await ClientServiceRequest.countDocuments({
+        userId: targetUserId,
+        fulfillmentStatus: 'pending',
+      });
+      if (pendCount === 1) {
+        const only = await ClientServiceRequest.findOne({
+          userId: targetUserId,
+          fulfillmentStatus: 'pending',
+        })
+          .sort({ createdAt: -1 })
+          .select('_id')
+          .lean();
+        if (only?._id) {
+          const r2 = await resolveLinkedClientServiceRequestId(String(only._id), targetUserId);
+          if (r2.ok && r2.value) linkedFinal = r2;
+        }
+      }
+    }
+
     const statusRaw = req.body?.status;
     const status =
       statusRaw && ['active', 'completed'].includes(String(statusRaw).trim())
@@ -3064,7 +3283,7 @@ app.post('/api/campaigns', async (req, res) => {
       type,
       city,
       interest,
-      targetCount,
+      targetCount: targetCountSafe,
       link: normalizeStoredLink(link),
       destinationKind: dk,
       destinationLabel: dl || undefined,
@@ -3076,7 +3295,7 @@ app.post('/api/campaigns', async (req, res) => {
         ? { subscriberPointsCost: parsedSubCost.value }
         : {}),
       ...(targetUserId ? { targetUserId } : {}),
-      ...(linkedResolved.value ? { linkedClientServiceRequestId: linkedResolved.value } : {}),
+      ...(linkedFinal.value ? { linkedClientServiceRequestId: linkedFinal.value } : {}),
     });
     res.status(201).json({ ok: true, campaign });
   } catch (err) {
@@ -3308,6 +3527,9 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
     throw err;
   }
 
+  const prevCurrentCount = campaign.currentCount;
+  const prevStatus = campaign.status;
+  let rewarded = false;
   try {
     const userUpdate = await User.findByIdAndUpdate(userId, { $inc: { points: pts } });
     if (!userUpdate) {
@@ -3315,22 +3537,42 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
       if (cost > 0) await User.findByIdAndUpdate(userId, { $inc: { points: cost } });
       return { ok: false, status: 400, message: 'المستخدم غير موجود' };
     }
+    rewarded = true;
     campaign.currentCount += 1;
-    if (campaign.currentCount >= campaign.targetCount) {
+    const cap = Number(campaign.targetCount);
+    if (Number.isFinite(cap) && cap > 0 && campaign.currentCount >= cap) {
       campaign.status = 'completed';
     }
     await campaign.save();
+
+    const rqDebit = await applyLinkedServiceRequestFulfillmentDebitForCampaign(campaign);
+    if (!rqDebit.ok) {
+      await Interaction.deleteOne({ _id: inserted._id });
+      await User.findByIdAndUpdate(userId, { $inc: { points: -pts } });
+      if (cost > 0) await User.findByIdAndUpdate(userId, { $inc: { points: cost } });
+      campaign.currentCount = prevCurrentCount;
+      campaign.status = prevStatus;
+      await campaign.save();
+      return { ok: false, status: 400, message: rqDebit.message };
+    }
+
+    let msg =
+      cost > 0
+        ? `تم التسجيل — خُصم ${cost} نقطة (قيمة الحملة) ثم إضافة مكافأة +${pts} نقطة.`
+        : `تم التسجيل (+${pts} نقاط)`;
+    if (rqDebit.debit > 0) {
+      msg += ` — خُصم من رصيد صاحب الطلب المرتبط ${rqDebit.debit} نقطة (تنفيذ الطلب).`;
+    }
+    return { ok: true, message: msg };
   } catch (err) {
     await Interaction.deleteOne({ _id: inserted._id });
+    if (rewarded) await User.findByIdAndUpdate(userId, { $inc: { points: -pts } });
     if (cost > 0) await User.findByIdAndUpdate(userId, { $inc: { points: cost } });
+    campaign.currentCount = prevCurrentCount;
+    campaign.status = prevStatus;
+    await campaign.save().catch(() => {});
     throw err;
   }
-
-  let msg =
-    cost > 0
-      ? `تم التسجيل — خُصم ${cost} نقطة (قيمة الحملة) ثم إضافة مكافأة +${pts} نقطة.`
-      : `تم التسجيل (+${pts} نقاط)`;
-  return { ok: true, message: msg };
 }
 
 function portalCampaignDestinationAr(kind) {
@@ -3360,7 +3602,7 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
     /** «نشطة» فقط كانت تستثني وثائق قديمة بلا حقل status؛ $nin يضمّنها ما لم تُعلَم مكتملة */
     const camps = await Campaign.find({ status: { $nin: ['completed'] } })
       .sort({ _id: -1 })
-      .limit(120)
+      .limit(500)
       .populate('targetUserId', 'socialPlatform instagramUsername name')
       .lean();
 

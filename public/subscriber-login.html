@@ -409,6 +409,9 @@
             showErr(data.error || 'تعذّر التحقق من الرمز.');
             return;
           }
+          try {
+            sessionStorage.setItem('rw_portal_session_t', String(data.portalToken).trim());
+          } catch (e) {}
           window.location.assign('/my-account');
         } catch {
           showErr('تعذّر الاتصال بالخادم.');

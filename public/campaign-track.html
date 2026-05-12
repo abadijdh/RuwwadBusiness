@@ -94,13 +94,6 @@
       line-height: 1.28;
     }
     .hero p { color: var(--muted); font-size: 0.92rem; max-width: 42rem; margin-inline: auto; }
-    .hero-actions {
-      margin-top: 1.15rem;
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 0.65rem;
-    }
     .btn-back-account {
       display: inline-flex;
       align-items: center;
@@ -134,13 +127,6 @@
       padding: 0.48rem 1rem;
       font-size: 0.84rem;
       white-space: nowrap;
-    }
-    .footer-back {
-      margin-top: 1rem;
-      display: block;
-      text-align: center;
-      font-weight: 700;
-      font-size: 0.92rem;
     }
     .card {
       background: var(--elevated);
@@ -247,9 +233,6 @@
     <header class="hero">
       <h1>تتبع الحملة</h1>
       <p>ملخص التقدّم وسُبل القياس التي تعكس ما يُسجَّل في المنصة — لا تشارك الرابط مع أحد غير المصرّح له.</p>
-      <div class="hero-actions">
-        <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
-      </div>
     </header>
 
     <div id="pasteGate" style="display:none">
@@ -261,9 +244,6 @@
         <label for="pasteTrack">الصق رابط التتبع أو الرمز الطويل</label>
         <input id="pasteTrack" type="text" dir="ltr" style="text-align:left" placeholder="مثال: …/campaign-track?t=…" autocomplete="off" spellcheck="false" />
         <button type="button" id="btnOpenTrack">عرض التتبع</button>
-        <p style="margin-top: 1rem; text-align: center">
-          <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
-        </p>
       </div>
     </div>
 
@@ -285,15 +265,11 @@
         <h2>بيانات الحملة</h2>
         <div id="kvGrid" class="kv"></div>
         <p id="disc" class="hint" style="margin-top:0.75rem;margin-bottom:0"></p>
-        <p style="margin-top: 1.1rem; text-align: center">
-          <a class="btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
-        </p>
       </section>
     </div>
 
     <footer>
-      احفظ رابط التتبع في مكان آمن كما يوجّهكم فريق المنصة.
-      <a class="footer-back btn-back-account" href="/my-account">الرجوع إلى حسابي</a>
+      احفظ رابط التتبع في مكان آمن كما يوجّهكم فريق المنصة. للعودة استخدم زر «الرجوع إلى حسابي» أو رابط «حسابي» في الشريط العلوي.
     </footer>
   </div>
 
@@ -406,6 +382,13 @@
           const csrBlock = csrIdRaw
             ? `<div style="grid-column:1/-1;padding-top:0.45rem;margin-top:0.35rem;border-top:1px solid rgba(255,255,255,0.12)"><strong>مرجع طلب عميل:</strong> <span class="mono" dir="ltr">${escapeHtml(csrIdRaw)}</span>${csrSumRaw ? `<div style="margin-top:0.4rem;font-size:0.92rem;line-height:1.45;color:rgba(255,255,255,0.82)">${escapeHtml(csrSumRaw)}</div>` : ''}</div>`
             : '';
+          const debitHintRaw =
+            c.requesterDebitHintAr != null && String(c.requesterDebitHintAr).trim()
+              ? String(c.requesterDebitHintAr).trim()
+              : '';
+          const debitBlock = debitHintRaw
+            ? `<div style="grid-column:1/-1;margin-top:0.5rem;padding:0.55rem 0.65rem;border-radius:10px;border:1px solid rgba(251,191,36,0.38);background:rgba(251,191,36,0.07);font-size:0.84rem;line-height:1.55;color:rgba(255,248,230,0.95)"><strong>خصم طالب الخدمة — تشخيص:</strong> ${escapeHtml(debitHintRaw)}</div>`
+            : '';
 
           document.getElementById('kvGrid').innerHTML = `
             <div><strong>العنوان:</strong> ${escapeHtml(c.title || '—')}</div>
@@ -414,6 +397,7 @@
             <div><strong>نوع التفاعل المطلوب:</strong> ${escapeHtml(campaignTypeAr(c.interactionType))}</div>
             <div><strong>وجهة الحملة:</strong> ${escapeHtml(destinationKindAr(c.destinationKind))}</div>
             ${csrBlock}
+            ${debitBlock}
           `;
           document.getElementById('disc').textContent = data.disclaimer || '';
         } catch {
