@@ -700,6 +700,20 @@
         </div>
       </div>
 
+      <div
+        id="hubInstagramOAuthBanner"
+        class="hint"
+        style="display: none; margin-top: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); line-height: 1.55"
+        role="region"
+        aria-label="ربط إنستغرام"
+      >
+        <strong>التحقق من إنستغرام (Meta):</strong>
+        <span id="hubInstagramOAuthBannerText" style="display: block; margin-top: 0.35rem"></span>
+        <button type="button" class="portal-svc-btn" id="btnHubOpenProfileForIg" style="margin-top: 0.5rem">
+          فتح «بياناتي» وعرض زر التحقق
+        </button>
+      </div>
+
       <p class="portal-hub-lead hint">اضغط أيقونة لفتح القسم؛ بعد الانتهاء اضغط «رجوع إلى حسابي» للعودة هنا.</p>
 
       <div class="portal-hub-grid" role="navigation" aria-label="أقسام حسابي">
@@ -1065,6 +1079,9 @@
       const row = document.getElementById('instagramOAuthRow');
       const hint = document.getElementById('instagramOAuthHint');
       const a = document.getElementById('linkInstagramOAuth');
+      const hubBan = document.getElementById('hubInstagramOAuthBanner');
+      const hubTxt = document.getElementById('hubInstagramOAuthBannerText');
+      const hubBtn = document.getElementById('btnHubOpenProfileForIg');
       if (!row || !hint || !a) return;
       let configured = false;
       try {
@@ -1082,6 +1099,7 @@
       const hasUser = !!(profile?.usernameOnPlatform && String(profile.usernameOnPlatform).trim());
       if (!isIg || !hasUser) {
         row.style.display = 'none';
+        if (hubBan) hubBan.style.display = 'none';
         return;
       }
       row.style.display = 'block';
@@ -1089,6 +1107,7 @@
         hint.textContent =
           'لم يُضبط بعد على الخادم: أضف الفريق INSTAGRAM_APP_ID و INSTAGRAM_APP_SECRET و INSTAGRAM_REDIRECT_URI في الاستضافة (مع تطابق رابط العودة في لوحة تطبيق Meta).';
         a.style.display = 'none';
+        if (hubBan) hubBan.style.display = 'none';
         return;
       }
       hint.textContent = profile.instagramVerified
@@ -1096,6 +1115,13 @@
         : 'يفتح نافذة Meta: سجّل الدخول بحساب إنستغرام احترافي (Business/Creator) يطابق اسم المستخدم في ملفك.';
       a.style.display = 'inline-block';
       a.href = portalApiUrl('/api/portal/instagram/oauth/start');
+      if (hubBan && hubTxt && hubBtn) {
+        hubBan.style.display = 'block';
+        hubTxt.textContent = profile.instagramVerified
+          ? 'تم ربط إنستغرام سابقاً. لإعادة التحقق افتح «بياناتي» واضغط الرابط هناك.'
+          : 'زر «التحقق من حسابي عبر إنستغرام» داخل قسم «بياناتي» وليس على هذه الشاشة. اضغط الزر أدناه للانتقال مباشرة.';
+        hubBtn.onclick = () => openPortalAccountSection('secProfile');
+      }
     }
 
     const portalHubScreenEl = () => document.getElementById('portalHubScreen');
