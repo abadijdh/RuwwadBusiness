@@ -1172,13 +1172,21 @@
     <section id="sec-verify" class="card">
       <h2>كود تحقق للحملة</h2>
       <p class="hint" style="margin-top:0">
-        يُصدَر لكل <strong>مشترك + حملة</strong> كود فريد يمكن استخدامه مع <strong>أي رابط تضعه للحملة</strong> (متجر، موقع، منشور سوشال، …).
-        التحقق عندك يكون غالباً يدوياً عبر إرسال الكود للعميل أو استلامه بعد الشراء/الزيارة؛ منصات الطرف الثالث لا تُبلّغنا تلقائياً بكل خطوة بدون تكامل برمجي خاص.
-        عند إنشاء الحملة اختر <strong>وجهة الحملة</strong> (تواصل / موقع / متجر) ليتم ضبط نص الإرشاد في استجابة الـ API عند إصدار الكود.
+        يمكنكم إما إصدار <strong>كود فريد لكل مشترك + حملة</strong> (من المعرفات أدناه)، أو تعيين <strong>كود موحّد واحد</strong> لجميع المشتركين في نفس الحملة — الأسهل للإعلان والواتساب. الكود الموحّد يُحفظ على الحملة؛ الكود الفردي يتقدّم عليه عند المشترك الذي صدر له كود خاص.
       </p>
       <div class="grid2">
         <div><label for="vcUser">معرّف المشترك</label><input id="vcUser" class="mono" placeholder="من جدول المشتركين — زر استخدام" /></div>
         <div><label for="vcCampaign">الحملة</label><select id="vcCampaign"></select></div>
+      </div>
+      <div style="margin-top:0.85rem;padding:0.65rem 0.75rem;border:1px solid var(--border);border-radius:10px;background:var(--input-bg)">
+        <strong>كود موحّد للحملة</strong>
+        <p class="hint" style="margin:0.35rem 0 0.5rem">اختر الحملة من القائمة، ثم ولّد كوداً أو اكتب كوداً يدوياً (٤ أحرف على الأقل) واضغط حفظ. «مسح» يزيل الكود الموحّد من الحملة.</p>
+        <div class="row" style="flex-wrap:wrap;gap:0.5rem;align-items:center">
+          <input id="vcSharedCode" class="mono" dir="ltr" placeholder="يُحمّل تلقائياً عند اختيار الحملة" spellcheck="false" style="min-width:12rem;flex:1" />
+          <button type="button" class="secondary" id="btnVcSharedGenerate">توليد كود</button>
+          <button type="button" id="btnVcSharedSave">حفظ يدوي</button>
+          <button type="button" class="secondary" id="btnVcSharedClear">مسح الموحّد</button>
+        </div>
       </div>
       <div class="row" style="margin-top:0.75rem">
         <button type="button" id="btnVcGet">إصدار / عرض الكود</button>
@@ -2110,13 +2118,17 @@
     async function refreshVcClaimsList() {
       const campaignId = document.getElementById('vcCampaign').value;
       const tbody = document.getElementById('vcClaimsBody');
+      const sharedInp = document.getElementById('vcSharedCode');
       if (!tbody) return;
       if (!campaignId) {
         tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">اختر حملة من القائمة</td></tr>';
+        if (sharedInp) sharedInp.value = '';
         return;
       }
       try {
-        const { claims } = await req(`/api/admin/campaigns/${campaignId}/verification-codes`);
+        const data = await req(`/api/admin/campaigns/${campaignId}/verification-codes`);
+        const claims = Array.isArray(data.claims) ? data.claims : [];
+        if (sharedInp) sharedInp.value = data.sharedVerificationCode || '';
         tbody.innerHTML = claims.length
           ? claims
               .map((r) => {
@@ -2161,6 +2173,28 @@
         });
         document.getElementById('vcOut').textContent = JSON.stringify(data, null, 2);
         showFlash(vcFlash, 'تم — انظر الكود في المربع أو في الجدول.', true);
+        await refreshVcClaimsList();
+      } catch (e) {
+        showFlash(vcFlash, e.message, false);
+      }
+    }
+
+    async function postSharedVerificationCode(body) {
+      const vcFlash = document.getElementById('vcFlash');
+      const campaignId = document.getElementById('vcCampaign').value;
+      if (!campaignId) {
+        showFlash(vcFlash, 'اختر الحملة من القائمة.', false);
+        return;
+      }
+      showFlash(vcFlash, '');
+      try {
+        const data = await req(`/api/campaigns/${campaignId}/shared-verification-code`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        const inp = document.getElementById('vcSharedCode');
+        if (inp) inp.value = data.sharedVerificationCode || '';
+        showFlash(vcFlash, data.sharedVerificationCode ? 'تم حفظ الكود الموحّد على الحملة.' : 'تم مسح الكود الموحّد.', true);
         await refreshVcClaimsList();
       } catch (e) {
         showFlash(vcFlash, e.message, false);
@@ -3381,6 +3415,16 @@
 
     document.getElementById('btnVcGet').onclick = () => requestVerificationCode();
     document.getElementById('btnVcList').onclick = () => refreshVcClaimsList();
+    document.getElementById('btnVcSharedGenerate').onclick = () => postSharedVerificationCode({ generate: true });
+    document.getElementById('btnVcSharedClear').onclick = () => postSharedVerificationCode({ clear: true });
+    document.getElementById('btnVcSharedSave').onclick = () => {
+      const raw = document.getElementById('vcSharedCode')?.value?.trim() || '';
+      if (raw.length < 4) {
+        showFlash(document.getElementById('vcFlash'), 'أدخل كوداً لا يقل عن ٤ أحرف أو استخدم «توليد كود».', false);
+        return;
+      }
+      postSharedVerificationCode({ code: raw });
+    };
 
     document.getElementById('btnLcCopyAnon').onclick = async () => {
       const c = document.getElementById('lcCamp').value.trim();

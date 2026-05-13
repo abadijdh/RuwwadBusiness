@@ -1236,6 +1236,11 @@ const campaignSchema = new mongoose.Schema({
    * إن تُرك فارغاً يُستنتَج من الرابط أو من منصة المشترك المستهدَف عند غياب رابط https.
    */
   socialPlatform: { type: String, enum: PLATFORM_IDS },
+  /**
+   * كود تحقق واحد لجميع المشتركين في هذه الحملة (يُطلب عند «تسجيل مشاركتي»).
+   * إن وُجد كود فردي (CampaignClaim) لمشترك يُطلب ذلك الكود لهذا المشترك بدلاً من الموحّد.
+   */
+  sharedVerificationCode: { type: String, trim: true, default: '' },
 });
 campaignSchema.index({ linkedClientServiceRequestId: 1 }, { sparse: true });
 const Campaign = mongoose.model('Campaign', campaignSchema);
@@ -1256,7 +1261,7 @@ function verificationInstructionForCampaign(campaign) {
   if (kind === 'other') {
     return `استخدم الكود كمرجع لربط المشترك بالحملة عبر أي قناة تناسب عملك. ${linkNote}`;
   }
-  return `كود التحقق صالح لأي رابط حملة على وسائل التواصل. يمكن طلب إرسال الكود أو نشره في تعليق للمطابقة اليدوية؛ على إنستغرام لا يصل إشعار برمجي بالتعليقات بدون Instagram Graph API. ${linkNote}`;
+  return `كود التحقق صالح لأي رابط حملة على وسائل التواصل. يمكن إصدار كود لكل مشترك، أو تعيين كود موحّد واحد للحملة من لوحة الفريق. يمكن طلب إرسال الكود أو نشره في تعليق للمطابقة اليدوية؛ على إنستغرام لا يصل إشعار برمجي بالتعليقات بدون Instagram Graph API. ${linkNote}`;
 }
 
 const interactionSchema = new mongoose.Schema(
@@ -1273,7 +1278,7 @@ const interactionSchema = new mongoose.Schema(
 interactionSchema.index({ userId: 1, campaignId: 1 }, { unique: true });
 const Interaction = mongoose.model('Interaction', interactionSchema);
 
-/** كود فريد لكل (مشترك + حملة) — مطابقة التفاعل الفعلي مع المنصات تحتاج واجهات المنصة أو مراجعة يدوية */
+/** كود فريد لكل (مشترك + حملة) — أو استخدم كوداً موحّداً على مستوى الحملة (sharedVerificationCode) */
 const campaignClaimSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -1566,6 +1571,15 @@ async function createUserWithPortalToken(payload) {
 
 function makeVerificationCode() {
   return `RW-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
+/** تطبيع كود التحقق الموحّد للحملة (أحرف كبيرة، بدون فراغات داخلية) */
+function normalizeSharedVerificationCode(raw) {
+  return String(raw ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .slice(0, 64);
 }
 
 /** التحقق من معرّف طلب عميل قبل ربطه بحملة */
@@ -3526,6 +3540,9 @@ app.post('/api/campaigns', async (req, res) => {
     const linkedResolved = await resolveLinkedClientServiceRequestId(linkedReqRaw, targetUserId);
     if (!linkedResolved.ok) return res.status(400).json({ error: linkedResolved.error });
 
+    const sharedNorm = normalizeSharedVerificationCode(req.body?.sharedVerificationCode);
+    const sharedField = sharedNorm.length >= 4 ? { sharedVerificationCode: sharedNorm } : {};
+
     let linkedFinal = linkedResolved;
     if (!linkedFinal.value && targetUserId) {
       const pendCount = await ClientServiceRequest.countDocuments({
@@ -3572,6 +3589,7 @@ app.post('/api/campaigns', async (req, res) => {
       ...(targetUserId ? { targetUserId } : {}),
       ...(linkedFinal.value ? { linkedClientServiceRequestId: linkedFinal.value } : {}),
       ...(socialPlatformField ? { socialPlatform: socialPlatformField } : {}),
+      ...sharedField,
     });
     res.status(201).json({ ok: true, campaign });
   } catch (err) {
@@ -3699,6 +3717,19 @@ app.patch('/api/campaigns/:campaignId', async (req, res) => {
       else $unset.linkedClientServiceRequestId = '';
     }
 
+    if ('sharedVerificationCode' in body) {
+      const raw = body.sharedVerificationCode;
+      if (raw == null || String(raw).trim() === '') {
+        $unset.sharedVerificationCode = '';
+      } else {
+        const norm = normalizeSharedVerificationCode(raw);
+        if (!norm || norm.length < 4) {
+          return res.status(400).json({ error: 'كود التحقق الموحّد غير صالح (٤ أحرف على الأقل)' });
+        }
+        $set.sharedVerificationCode = norm;
+      }
+    }
+
     const mongoUp = {};
     if (Object.keys($set).length) mongoUp.$set = $set;
     if (Object.keys($unset).length) mongoUp.$unset = $unset;
@@ -3754,8 +3785,18 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
   if (!mongoose.isValidObjectId(userId) || !mongoose.isValidObjectId(campaignId)) {
     return { ok: false, status: 400, message: 'معرّف المستخدم أو الحملة غير صالح' };
   }
-  const vc = verificationCode != null ? String(verificationCode).trim().toUpperCase() : '';
+  const vc =
+    verificationCode != null ? String(verificationCode).trim().toUpperCase().replace(/\s+/g, '') : '';
+
+  const campaign = await Campaign.findById(campaignId).populate('targetUserId', 'socialPlatform instagramUsername');
+  if (!campaign || campaign.status === 'completed') {
+    return { ok: false, status: 400, message: 'الحملة غير متاحة' };
+  }
+
+  const sharedNorm = normalizeSharedVerificationCode(campaign.sharedVerificationCode);
+  const hasShared = !!sharedNorm;
   const claimRequired = await CampaignClaim.exists({ userId, campaignId });
+
   if (claimRequired) {
     if (!vc) {
       return {
@@ -3768,15 +3809,22 @@ async function tryRegisterCampaignInteraction(userId, campaignId, verificationCo
     if (!claim) {
       return { ok: false, status: 400, message: 'كود التحقق لا يطابق هذا المشترك وهذه الحملة' };
     }
+  } else if (hasShared) {
+    if (!vc) {
+      return {
+        ok: false,
+        status: 400,
+        message: 'كود التحقق مطلوب — أدخل كود الحملة الموحّد الذي وزّعه الفريق.',
+      };
+    }
+    if (vc !== sharedNorm) {
+      return { ok: false, status: 400, message: 'كود التحقق لا يطابق كود هذه الحملة' };
+    }
   } else if (vc) {
     const claim = await CampaignClaim.findOne({ userId, campaignId, code: vc }).lean();
     if (!claim) {
       return { ok: false, status: 400, message: 'كود التحقق لا يطابق هذا المشترك وهذه الحملة' };
     }
-  }
-  const campaign = await Campaign.findById(campaignId).populate('targetUserId', 'socialPlatform instagramUsername');
-  if (!campaign || campaign.status === 'completed') {
-    return { ok: false, status: 400, message: 'الحملة غير متاحة' };
   }
 
   const participant = await User.findById(userId).select('socialPlatform').lean();
@@ -3940,7 +3988,10 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
 
     const rows = available.map((c) => {
       const campPlatEff = effectiveCampaignSocialPlatformIdForUserMatch(c);
-      const linkLocked = participationLinkLockedIds.has(String(c._id));
+      const hasPersonalClaim = participationLinkLockedIds.has(String(c._id));
+      const sharedRaw = String(c.sharedVerificationCode || '').trim();
+      const linkLocked = hasPersonalClaim || !!sharedRaw;
+      const verifyKind = hasPersonalClaim ? 'personal' : sharedRaw ? 'shared' : 'none';
       return {
         id: String(c._id),
         title: c.title || '',
@@ -3951,9 +4002,10 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
         destinationKind: c.destinationKind || 'social',
         destinationKindAr: portalCampaignDestinationAr(c.destinationKind || 'social'),
         destinationLabel: (c.destinationLabel || '').trim(),
-        /** الرابط يُعرض دائماً لتسهيل المشاركة؛ إن وُجد كود تحقق يبقى مطلوباً عند «تسجيل مشاركتي» فقط */
+        /** الرابط يُعرض دائماً لتسهيل المشاركة؛ إن وُجد كود (فردي أو موحّد) يُطلب عند «تسجيل مشاركتي» */
         link: c.link || '',
         participationLinkLocked: linkLocked,
+        participationVerifyKind: verifyKind,
         participationUrl: participationTrackedPortalHref(req, c, userId),
         participationManualNoteAr: portalCompletionNoteArForCampaignType(c.type),
         participationOpenLabelAr: portalParticipationOpenLabelAr(c.type),
@@ -4015,7 +4067,7 @@ app.post('/api/portal/verify-participation-code', async (req, res) => {
     if (!mongoose.isValidObjectId(campaignId)) {
       return res.status(400).json({ error: 'معرّف الحملة غير صالح' });
     }
-    const vc = verificationCode != null ? String(verificationCode).trim().toUpperCase() : '';
+    const vc = verificationCode != null ? String(verificationCode).trim().toUpperCase().replace(/\s+/g, '') : '';
     if (!vc) {
       return res.status(400).json({ error: 'أدخل كود التحقق' });
     }
@@ -4023,14 +4075,18 @@ app.post('/api/portal/verify-participation-code', async (req, res) => {
     if (!user) return res.status(404).json({ error: 'الجلسة غير صالحة' });
 
     const claim = await CampaignClaim.findOne({ userId: user._id, campaignId, code: vc }).lean();
-    if (!claim) {
-      return res.status(400).json({ error: 'الكود غير صحيح أو لم يُصدَر لك على هذه الحملة' });
-    }
     const campaign = await Campaign.findById(campaignId)
       .populate('targetUserId', 'socialPlatform instagramUsername name')
       .lean();
     if (!campaign || campaign.status === 'completed') {
       return res.status(400).json({ error: 'الحملة غير متاحة' });
+    }
+
+    if (!claim) {
+      const sharedNorm = normalizeSharedVerificationCode(campaign.sharedVerificationCode);
+      if (!sharedNorm || vc !== sharedNorm) {
+        return res.status(400).json({ error: 'الكود غير صحيح أو لا يطابق كود هذه الحملة' });
+      }
     }
 
     const reqPlat = effectiveCampaignSocialPlatformIdForUserMatch(campaign);
@@ -4356,6 +4412,44 @@ app.post('/api/campaigns/:campaignId/verification-code', async (req, res) => {
   }
 });
 
+/** ضبط كود تحقق موحّد لجميع المشتركين في حملة (نفس الكود للجميع عند «تسجيل مشاركتي») */
+app.post('/api/campaigns/:campaignId/shared-verification-code', async (req, res) => {
+  try {
+    const { campaignId } = req.params;
+    if (!mongoose.isValidObjectId(campaignId)) {
+      return res.status(400).json({ error: 'معرّف الحملة غير صالح' });
+    }
+    const campaign = await Campaign.findById(campaignId).select('_id status').lean();
+    if (!campaign) return res.status(404).json({ error: 'الحملة غير موجودة' });
+    if (campaign.status === 'completed') {
+      return res.status(400).json({ error: 'الحملة منتهية — لا يمكن تعديل الكود' });
+    }
+    const body = req.body || {};
+    if (body.clear === true || body.clear === 'true') {
+      await Campaign.updateOne({ _id: campaignId }, { $unset: { sharedVerificationCode: '' } });
+      return res.json({ ok: true, sharedVerificationCode: '' });
+    }
+    if (body.generate === true || body.generate === 'true') {
+      let next = '';
+      for (let i = 0; i < 12; i++) {
+        next = makeVerificationCode();
+        const clash = await CampaignClaim.exists({ code: next });
+        if (!clash) break;
+      }
+      await Campaign.updateOne({ _id: campaignId }, { $set: { sharedVerificationCode: next } });
+      return res.json({ ok: true, sharedVerificationCode: next });
+    }
+    const norm = normalizeSharedVerificationCode(body.code);
+    if (!norm || norm.length < 4) {
+      return res.status(400).json({ error: 'أدخل كوداً لا يقل عن ٤ أحرف أو استخدم «توليد كود»' });
+    }
+    await Campaign.updateOne({ _id: campaignId }, { $set: { sharedVerificationCode: norm } });
+    res.json({ ok: true, sharedVerificationCode: norm });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** قائمة من طلبوا كوداً لحملة معيّنة */
 app.get('/api/admin/campaigns/:campaignId/verification-codes', async (req, res) => {
   try {
@@ -4364,6 +4458,7 @@ app.get('/api/admin/campaigns/:campaignId/verification-codes', async (req, res) 
       return res.status(400).json({ error: 'معرّف حملة غير صالح' });
     }
     const claims = await CampaignClaim.find({ campaignId }).sort({ createdAt: -1 }).populate('userId').lean();
+    const camp = await Campaign.findById(campaignId).select('sharedVerificationCode').lean();
     const rows = claims.map((c) => {
       const u = c.userId;
       const plat = u?.socialPlatform || 'instagram';
@@ -4380,7 +4475,11 @@ app.get('/api/admin/campaigns/:campaignId/verification-codes', async (req, res) 
         phone: u?.phone ?? '',
       };
     });
-    res.json({ ok: true, claims: rows });
+    res.json({
+      ok: true,
+      claims: rows,
+      sharedVerificationCode: normalizeSharedVerificationCode(camp?.sharedVerificationCode) || '',
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
