@@ -610,6 +610,7 @@
         <a href="#campaign-new" data-page="campaign-new">إنشاء حملة</a>
         <a href="#engagement" data-page="engagement">تفاعل وأكواد</a>
         <a href="#outreach" data-page="outreach">روابط وتبليغ</a>
+        <a href="#whatsapp" data-page="whatsapp">واتساب (قوالب)</a>
         <a href="#tables" data-page="tables">الجداول</a>
       </nav>
       <div class="sidebar-foot">
@@ -1157,6 +1158,54 @@
     </section>
     </div>
 
+    <div class="dash-page" data-page="whatsapp">
+    <section id="sec-whatsapp-templates" class="card">
+      <h2>واتساب — قوالب معتمدة (Cloud API)</h2>
+      <p class="hint" style="margin-top:0">
+        لمراسلة من لم يبدأ محادثة خلال ٢٤ ساعة، يفرض واتساب استخدام <strong>قالب معتمد</strong> من Meta (ترحيب، اشتراك، تذكير…). لا يُرسل هذا القسم نصاً حراً؛ يمرّر اسم القالب والمتغيرات فقط إلى واجهة Graph كما في مدير القوالب.
+      </p>
+      <p class="hint" style="margin-top:0.35rem">
+        <strong>غير المشتركين</strong> = أي جوال ورد في <strong>طلبات الخدمة</strong> ولا يوجد مشترك مسجّل بنفس الجوال. تحميل القائمة حتى السقف في <code dir="ltr">.env</code> (افتراضي ٥٠٠ ألف). <strong>تكلفة الإرسال</strong> تُحسب من <strong>Meta</strong> على حساب WhatsApp Business حسب <strong>فئة القالب</strong> (تسويق، خدمة، …) وليس من منصة رواد الأعمال.
+      </p>
+      <p id="waStatusLine" class="hint" style="margin-top:0.35rem">—</p>
+      <div class="grid2" style="margin-top:0.65rem">
+        <div>
+          <label for="waTemplateName">اسم القالب (بالإنجليزية كما في مدير واتساب)</label>
+          <input id="waTemplateName" class="mono" dir="ltr" placeholder="welcome_subscribe" autocomplete="off" />
+        </div>
+        <div>
+          <label for="waLang">لغة القالب</label>
+          <input id="waLang" class="mono" dir="ltr" placeholder="ar" value="ar" autocomplete="off" />
+        </div>
+      </div>
+      <label for="waBodyParams" style="display:block;margin-top:0.65rem;font-size:0.82rem;color:var(--muted)">متغيرات جسم القالب (سطر لكل {{1}}، {{2}}، … بالترتيب — اتركه فارغاً إن كان القالب ثابتاً)</label>
+      <textarea id="waBodyParams" rows="4" style="margin-top:0.35rem;width:100%;font-family:inherit;font-size:0.88rem" dir="ltr" placeholder="سطر أول&#10;سطر ثانٍ"></textarea>
+      <label for="waRecipients" style="display:block;margin-top:0.65rem;font-size:0.82rem;color:var(--muted)">أرقام المستلمين (سطر لكل رقم — تُطبَّع إلى 9665…)</label>
+      <textarea id="waRecipients" rows="10" style="margin-top:0.35rem;width:100%;font-family:inherit;font-size:0.88rem" dir="ltr" placeholder="0501234567"></textarea>
+      <label class="row" style="margin-top:0.55rem;align-items:center;gap:0.5rem;cursor:pointer">
+        <input type="checkbox" id="waNonSubBilling" />
+        <span style="font-size:0.88rem">قائمة <strong>خارج المشتركين المسجّلين</strong> — يرفع حد الدفعة؛ <strong>الفوترة من Meta</strong> على حساب واتساب Business حسب فئة القالب وسياسة المحادثات</span>
+      </label>
+      <div class="grid2" style="margin-top:0.65rem">
+        <div>
+          <label for="waDelayMs">تأخير بين كل إرسال (مللي ثانية)</label>
+          <input id="waDelayMs" type="number" min="250" max="8000" value="650" dir="ltr" />
+        </div>
+        <div>
+          <label for="waMaxRecipients">حد أقصى للأرقام في هذه الدفعة (يزيد تلقائياً عند تفعيل «غير مشتركين»)</label>
+          <input id="waMaxRecipients" type="number" min="1" max="50000" value="25" dir="ltr" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:0.75rem;flex-wrap:wrap;gap:0.5rem">
+        <button type="button" class="secondary" id="btnWaLoadSubscribers">تحميل أرقام المشتركين</button>
+        <button type="button" class="secondary" id="btnWaLoadNonSubs">تحميل أرقام غير المشتركين (طلبات خدمة)</button>
+        <button type="button" id="btnWaSendTemplate">إرسال القالب</button>
+      </div>
+      <div id="waFlash" style="margin-top:0.5rem"></div>
+      <pre id="waResult" style="margin-top:0.5rem;max-height:14rem;overflow:auto;white-space:pre-wrap;word-break:break-all">—</pre>
+    </section>
+    </div>
+
     <div class="dash-page" data-page="tables">
       <div class="card tables-switch-card">
         <div class="tables-tabs-bar" role="tablist" aria-label="اختيار الجدول">
@@ -1338,6 +1387,7 @@
       'campaign-new',
       'engagement',
       'outreach',
+      'whatsapp',
       'tables',
     ];
     const PAGE_LABELS_AR = {
@@ -1349,6 +1399,7 @@
       'campaign-new': 'إنشاء حملة',
       engagement: 'تفاعل وأكواد',
       outreach: 'روابط وتبليغ',
+      whatsapp: 'واتساب (قوالب)',
       tables: 'الجداول',
     };
 
@@ -1422,6 +1473,47 @@
       if (id === 'requests' && !serviceCatalogLazyLoaded && document.getElementById('serviceCatalogBody')) {
         serviceCatalogLazyLoaded = true;
         refreshServiceCatalog(document.getElementById('serviceCatalogStatus'));
+      }
+      if (id === 'whatsapp') {
+        void refreshWhatsappPanel();
+      }
+    }
+
+    async function refreshWhatsappPanel() {
+      const statusEl = document.getElementById('waStatusLine');
+      if (!statusEl) return;
+      statusEl.textContent = 'جاري التحقق من الإعدادات…';
+      try {
+        const s = await req('/api/admin/whatsapp/status');
+        window.__waNonSubMax = Number(s.nonSubscriberMaxBatch) || 5000;
+        const cap = s.nonSubscriberSuggestCap != null ? Number(s.nonSubscriberSuggestCap).toLocaleString('ar-SA') : '—';
+        const batch = s.nonSubscriberMaxBatch != null ? Number(s.nonSubscriberMaxBatch).toLocaleString('ar-SA') : '—';
+        const metaUrl = String(s.metaWhatsappPricingUrl || 'https://developers.facebook.com/docs/whatsapp/pricing');
+        const metaHint = String(s.metaBillingHintAr || '').trim();
+        const limits = `سقف جمع أرقام غير المشتركين: ${cap} · حد الدفعة للإرسال: ${batch}.`;
+        const metaLine = metaHint ? `${metaHint} ` : '';
+        if (s.configured) {
+          statusEl.textContent = `الربط مُعرَّف — Graph ${s.graphVersion} · Phone number ID: ${s.phoneNumberIdHint}. ${limits} ${metaLine}تسعير Meta: ${metaUrl}`;
+        } else {
+          statusEl.textContent = `غير مُعرَّف واتساب API: أضِف WHATSAPP_CLOUD_ACCESS_TOKEN و WHATSAPP_PHONE_NUMBER_ID. ${limits} ${metaLine}تسعير Meta: ${metaUrl}`;
+        }
+        syncWhatsappRecipientsLimitUi();
+      } catch (e) {
+        statusEl.textContent = e.message || 'تعذّر قراءة الحالة.';
+      }
+    }
+
+    function syncWhatsappRecipientsLimitUi() {
+      const el = document.getElementById('waMaxRecipients');
+      const chk = document.getElementById('waNonSubBilling');
+      if (!el) return;
+      const nonMax = Math.min(50000, Math.max(1, Number(window.__waNonSubMax) || 5000));
+      if (chk && chk.checked) {
+        el.max = String(nonMax);
+        if (Number(el.value) > nonMax) el.value = String(nonMax);
+      } else {
+        el.max = '100';
+        if (Number(el.value) > 100) el.value = '25';
       }
     }
 
@@ -3271,6 +3363,97 @@
         alert(e.message);
       }
     };
+
+    document.getElementById('btnWaLoadSubscribers').onclick = async () => {
+      const flash = document.getElementById('waFlash');
+      const chk = document.getElementById('waNonSubBilling');
+      if (chk) chk.checked = false;
+      syncWhatsappRecipientsLimitUi();
+      showFlash(flash, '');
+      try {
+        const data = await req('/api/admin/whatsapp/suggest-phones?kind=subscribers&full=1');
+        document.getElementById('waRecipients').value = (data.phones || []).join('\n');
+        showFlash(flash, `تم تحميل ${data.count.toLocaleString('ar-SA')} رقماً من المشتركين.`, true);
+      } catch (e) {
+        showFlash(flash, e.message, false);
+      }
+    };
+    document.getElementById('btnWaLoadNonSubs').onclick = async () => {
+      const flash = document.getElementById('waFlash');
+      const chk = document.getElementById('waNonSubBilling');
+      if (chk) chk.checked = true;
+      syncWhatsappRecipientsLimitUi();
+      showFlash(flash, 'جاري بناء قائمة غير المشتركين (قد يستغرق وقتاً إذا كانت الطلبات كثيرة)…', true);
+      try {
+        const data = await req('/api/admin/whatsapp/suggest-phones?kind=non_subscribers&full=1');
+        document.getElementById('waRecipients').value = (data.phones || []).join('\n');
+        const note = data.noteAr ? ` ${data.noteAr}` : '';
+        const capDisp =
+          data.cap != null && typeof data.cap.toLocaleString === 'function'
+            ? data.cap.toLocaleString('ar-SA')
+            : String(data.cap ?? '');
+        showFlash(flash, `تم تحميل ${data.count.toLocaleString('ar-SA')} رقماً (السقف ${capDisp}).${note}`, true);
+      } catch (e) {
+        showFlash(flash, e.message, false);
+      }
+    };
+    document.getElementById('btnWaSendTemplate').onclick = async () => {
+      const flash = document.getElementById('waFlash');
+      const pre = document.getElementById('waResult');
+      showFlash(flash, '');
+      const templateName = document.getElementById('waTemplateName').value.trim();
+      if (!templateName) {
+        showFlash(flash, 'أدخل اسم القالب كما في مدير واتساب.', false);
+        return;
+      }
+      const recipients = document.getElementById('waRecipients').value.trim();
+      if (!recipients) {
+        showFlash(flash, 'أدخل أرقاماً أو استخدم أزرار التحميل.', false);
+        return;
+      }
+      const delayMs = Math.floor(Number(document.getElementById('waDelayMs').value)) || 650;
+      const maxRecipients = Math.floor(Number(document.getElementById('waMaxRecipients').value)) || 25;
+      const bodyParamsRaw = document.getElementById('waBodyParams').value.trim();
+      const body = {
+        templateName,
+        languageCode: document.getElementById('waLang').value.trim() || 'ar',
+        recipients,
+        delayMs,
+        maxRecipients,
+      };
+      if (bodyParamsRaw) {
+        body.bodyParams = bodyParamsRaw
+          .split('\n')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      }
+      const nonSub = document.getElementById('waNonSubBilling')?.checked;
+      if (nonSub) body.billingAudience = 'non_subscribers';
+      let confirmMsg = `تأكيد إرسال القالب «${templateName}» إلى حتى ${maxRecipients} رقماً؟`;
+      if (nonSub) {
+        confirmMsg +=
+          ' التصنيف: قائمة خارج المشتركين — تُحسب التكلفة على حسابك في Meta حسب فئة القالب (راجع تسعير واتساب في Business Manager).';
+      }
+      if (!window.confirm(confirmMsg)) return;
+      try {
+        const data = await req('/api/admin/whatsapp/send-template', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        const cap = data.capped ? ' — وُقف عند الحد الأقصى للدفعة.' : '';
+        const meta =
+          data.billingAudience === 'non_subscribers' && data.metaBillingHintAr
+            ? ` ${String(data.metaBillingHintAr).slice(0, 220)}…`
+            : '';
+        showFlash(flash, `تمت المعالجة: نجح ${data.sent} · فشل ${data.failed}.${cap}${meta}`, Number(data.failed) === 0);
+        if (pre) pre.textContent = JSON.stringify(data.results || [], null, 2);
+      } catch (e) {
+        showFlash(flash, e.message, false);
+        if (pre) pre.textContent = '';
+      }
+    };
+
+    document.getElementById('waNonSubBilling')?.addEventListener('change', () => syncWhatsappRecipientsLimitUi());
 
     document.getElementById('vcCampaign').addEventListener('change', async () => {
       syncTrackingFieldsFromVc();

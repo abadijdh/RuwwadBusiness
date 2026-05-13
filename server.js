@@ -13,6 +13,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const { Decimal128, BSONRegExp } = require('bson');
 const { ZipArchive } = require('archiver');
+const whatsappCloud = require('./whatsapp-cloud');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -2796,6 +2797,267 @@ app.patch('/api/admin/client-service-catalog', async (req, res) => {
     res.json({ ok: true, restricted: true, enabledClientServiceIds: cleaned });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+/** رابط تسعير واتساب الرسمي من Meta (يُحمَّل على حساب WhatsApp Business المربوط بالتطبيق) */
+const META_WHATSAPP_PRICING_URL = 'https://developers.facebook.com/docs/whatsapp/pricing';
+
+function whatsappMetaBillingHintAr() {
+  return 'الفوترة ليست من منصة «رواد الأعمال» بل من Meta على حساب واتساب Business: تختلف حسب فئة القالب (تسويق، خدمة، مصادقة، …) وسياسة المحادثات. راجع صفحة التسعير الرسمية وBusiness Suite لرصد الاستهلاك.';
+}
+
+function whatsappNonSubscriberSuggestCapFromEnv() {
+  const n = Math.floor(Number(process.env.WHATSAPP_NON_SUBSCRIBER_SUGGEST_CAP));
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.max(n, 1), 2_000_000);
+  return 500_000;
+}
+
+function whatsappNonSubscriberMaxBatchFromEnv() {
+  const n = Math.floor(Number(process.env.WHATSAPP_NON_SUBSCRIBER_MAX_BATCH));
+  if (Number.isFinite(n) && n > 0) return Math.min(Math.max(n, 1), 50_000);
+  return 5_000;
+}
+
+/** حالة ربط واتساب Cloud API (بدون أسرار) */
+app.get('/api/admin/whatsapp/status', async (_req, res) => {
+  try {
+    const cfg = whatsappCloud.whatsappCloudConfig();
+    res.json({
+      ok: true,
+      configured: cfg.configured,
+      phoneNumberIdHint: cfg.configured ? whatsappCloud.maskPhoneNumberId(cfg.phoneNumberId) : null,
+      graphVersion: cfg.graphVersion,
+      nonSubscriberSuggestCap: whatsappNonSubscriberSuggestCapFromEnv(),
+      nonSubscriberMaxBatch: whatsappNonSubscriberMaxBatchFromEnv(),
+      metaWhatsappPricingUrl: META_WHATSAPP_PRICING_URL,
+      metaBillingHintAr: whatsappMetaBillingHintAr(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * اقتراح أرقام لإرسال قوالب واتساب (بعد التطبيع إلى 9665… داخل مسار الإرسال).
+ * kind=subscribers: جوالات المشتركين في User.
+ * kind=non_subscribers: جوالات وردت في طلبات الخدمة وليست لأي مشترك مسجّل بنفس الجوال — حتى nonSubscriberSuggestCap (افتراضي ٥٠٠ ألف).
+ *   limit: رقم &gt; 0 يقصّ القائمة؛ 0 أو full=all أو حذف المعامل = حتى الحد الأقصى من البيئة.
+ */
+app.get('/api/admin/whatsapp/suggest-phones', async (req, res) => {
+  try {
+    const kind = String(req.query.kind || 'subscribers').trim();
+    const full =
+      String(req.query.full || '').trim() === '1' ||
+      String(req.query.all || '').trim() === '1' ||
+      String(req.query.limit || '').trim().toLowerCase() === 'all';
+
+    if (kind === 'subscribers') {
+      const hardCap = 50_000;
+      const limitRaw = req.query.limit;
+      let effectiveMax = Math.min(500, hardCap);
+      if (full) effectiveMax = hardCap;
+      else if (limitRaw !== undefined && limitRaw !== null && String(limitRaw).trim() !== '') {
+        const n = Math.floor(Number(limitRaw));
+        if (Number.isFinite(n) && n > 0) effectiveMax = Math.min(n, hardCap);
+        if (Number.isFinite(n) && n === 0) effectiveMax = hardCap;
+      } else {
+        effectiveMax = Math.min(500, hardCap);
+      }
+
+      const users = await User.find({ phone: { $exists: true, $nin: [null, ''] } })
+        .select('phone')
+        .sort({ _id: -1 })
+        .limit(Math.min(5000, effectiveMax * 3))
+        .lean();
+      const out = [];
+      const seen = new Set();
+      for (const u of users) {
+        const n = normalizeSignupPhone(u.phone);
+        if (n.error || seen.has(n.phone)) continue;
+        seen.add(n.phone);
+        out.push(n.phone);
+        if (out.length >= effectiveMax) break;
+      }
+      return res.json({ ok: true, kind, count: out.length, phones: out, cap: hardCap });
+    }
+
+    if (kind === 'non_subscribers') {
+      const hardCap = whatsappNonSubscriberSuggestCapFromEnv();
+      const limitRaw = req.query.limit;
+      let effectiveMax = hardCap;
+      if (!full && limitRaw !== undefined && limitRaw !== null && String(limitRaw).trim() !== '') {
+        const n = Math.floor(Number(limitRaw));
+        if (Number.isFinite(n) && n > 0) effectiveMax = Math.min(n, hardCap);
+      }
+
+      const userPhones = new Set();
+      const userCur = User.find({ phone: { $exists: true, $nin: [null, ''] } })
+        .select('phone')
+        .lean()
+        .cursor({ batchSize: 500 });
+      for await (const u of userCur) {
+        const p = normalizeSignupPhone(u.phone);
+        if (!p.error) userPhones.add(p.phone);
+      }
+
+      const out = [];
+      const seen = new Set();
+      const csrCur = ClientServiceRequest.find({})
+        .select('phone')
+        .lean()
+        .cursor({ batchSize: 500 });
+      for await (const r of csrCur) {
+        const p = normalizeSignupPhone(r.phone);
+        if (p.error || seen.has(p.phone)) continue;
+        if (userPhones.has(p.phone)) continue;
+        seen.add(p.phone);
+        out.push(p.phone);
+        if (out.length >= effectiveMax) break;
+      }
+
+      return res.json({
+        ok: true,
+        kind,
+        count: out.length,
+        phones: out,
+        cap: hardCap,
+        noteAr:
+          '«غير المشتركين» = رقم ورد في طلب خدمة ولا يوجد مشترك مسجّل بنفس الجوال. تكلفة الإرسال تُحسب على حسابك في Meta حسب فئة القالب وسياسة المحادثات — راجع صفحة تسعير واتساب الرسمية.',
+      });
+    }
+
+    return res.status(400).json({ error: 'kind غير صالح — استخدم subscribers أو non_subscribers' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * إرسال قالب واتساب معتمد إلى قائمة أرقام.
+ * body.billingAudience: subscribers (افتراضي) | non_subscribers — الأخير يرفع حد الدفعة فقط؛ الفوترة الفعلية من Meta على حساب WhatsApp Business.
+ */
+app.post('/api/admin/whatsapp/send-template', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const templateName = String(body.templateName || '').trim();
+    const languageCode = String(body.languageCode || 'ar').trim();
+
+    const billingRaw = String(body.billingAudience ?? body.audience ?? 'subscribers')
+      .trim()
+      .toLowerCase();
+    const isNonSubscriberAudience =
+      billingRaw === 'non_subscribers' || billingRaw === 'non_subscriber';
+
+    let recipients = body.recipients;
+    if (typeof recipients === 'string') {
+      recipients = recipients
+        .split(/[\s,;\n\r]+/)
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+    }
+    if (!Array.isArray(recipients) || !recipients.length) {
+      return res.status(400).json({
+        error: 'أرسل recipients كمصفوفة أرقام أو نصاً متعدد الأسطر (سطر لكل رقم).',
+      });
+    }
+
+    const delayMs = Math.max(250, Math.min(8000, Math.floor(Number(body.delayMs)) || 650));
+    const envBatch = whatsappNonSubscriberMaxBatchFromEnv();
+    const maxPerRequest = isNonSubscriberAudience
+      ? Math.min(envBatch, Math.max(1, Math.floor(Number(body.maxRecipients)) || Math.min(500, envBatch)))
+      : Math.min(100, Math.max(1, Math.floor(Number(body.maxRecipients)) || 25));
+
+    let bodyParams = [];
+    if (Array.isArray(body.bodyParams)) {
+      bodyParams = body.bodyParams.map((x) => String(x ?? ''));
+    } else if (typeof body.bodyParams === 'string' && body.bodyParams.trim()) {
+      bodyParams = body.bodyParams
+        .split('\n')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    }
+
+    const normalized = [];
+    const skipped = [];
+    const seen = new Set();
+    let capped = false;
+    for (let ri = 0; ri < recipients.length; ri++) {
+      const raw = recipients[ri];
+      const n = normalizeSignupPhone(raw);
+      if (n.error) {
+        skipped.push({ raw: String(raw).slice(0, 40), reason: n.error });
+        continue;
+      }
+      if (seen.has(n.phone)) continue;
+      seen.add(n.phone);
+      normalized.push(n.phone);
+      if (normalized.length >= maxPerRequest) {
+        capped = ri < recipients.length - 1;
+        break;
+      }
+    }
+
+    if (!normalized.length) {
+      return res.status(400).json({ error: 'لا يوجد رقم جوال سعودي صالح في القائمة.', skipped: skipped.slice(0, 40) });
+    }
+
+    const tplKey = templateName.toLowerCase();
+    const results = [];
+    for (let i = 0; i < normalized.length; i++) {
+      const to = normalized[i];
+      let ok = false;
+      let messageId = '';
+      let errMsg = '';
+      try {
+        const r = await whatsappCloud.sendWhatsappTemplate({
+          toDigits: to,
+          templateName,
+          languageCode,
+          bodyParams,
+        });
+        ok = true;
+        messageId = r.messages?.[0]?.id ? String(r.messages[0].id) : '';
+        results.push({ to, ok: true, messageId });
+      } catch (e) {
+        errMsg = e.message || String(e);
+        results.push({
+          to,
+          ok: false,
+          error: errMsg,
+          code: e.code || '',
+        });
+      }
+
+      if (i < normalized.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+
+    const okCount = results.filter((x) => x.ok).length;
+
+    res.json({
+      ok: true,
+      templateName: tplKey,
+      languageCode,
+      sent: okCount,
+      failed: results.length - okCount,
+      results,
+      skipped: skipped.slice(0, 40),
+      capped,
+      maxPerRequest,
+      delayMs,
+      billingAudience: isNonSubscriberAudience ? 'non_subscribers' : 'subscribers',
+      metaWhatsappPricingUrl: isNonSubscriberAudience ? META_WHATSAPP_PRICING_URL : null,
+      metaBillingHintAr: isNonSubscriberAudience ? whatsappMetaBillingHintAr() : null,
+    });
+  } catch (err) {
+    console.error('[ERR] /api/admin/whatsapp/send-template', err);
+    const st = Number(err.status);
+    res.status(st >= 400 && st < 600 ? st : 500).json({
+      error: err.message,
+      details: err.details,
+    });
   }
 });
 
