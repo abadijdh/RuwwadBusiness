@@ -816,7 +816,7 @@
 
       <section class="card portal-view-section" id="secParticipate">
         <h2 data-copy="secParticipateTitle">المشاركة في حملة (تسجيل التفاعل)</h2>
-        <p class="hint" data-copy-html="secParticipateHint">افتح الوجهة من الزر أدناه إن وُجد، وأكمل الإجراء (إعجاب، متابعة، تعليق…) من تطبيق المنصة أو الموقع نفسه؛ الموقع لا يتلقّى إشعاراً تلقائياً بالإعجاب أو غيره. بعد ذلك عد إلى هذه الصفحة واضغط «تسجيل مشاركتي». تُضاف النقاط وفق سياسة المنصة (مرّة واحدة لكل حملة). إن زودك الفريق ب<strong>كود تحقق</strong> مرتبط بك وب هذه الحملة فقط، يُخفى رابط التفاعل حتى تُدخل الكود وتضغط «تحقق من الكود وفتح رابط التفاعل»، ثم أدخل الكود أيضاً عند «تسجيل مشاركتي».</p>
+        <p class="hint" data-copy-html="secParticipateHint">افتح الوجهة من الزر أدناه إن وُجد، وأكمل الإجراء (إعجاب، متابعة، تعليق…) من تطبيق المنصة أو الموقع نفسه؛ الموقع لا يتلقّى إشعاراً تلقائياً بالإعجاب أو غيره. بعد ذلك عد إلى هذه الصفحة واضغط «تسجيل مشاركتي». تُضاف النقاط وفق سياسة المنصة (مرّة واحدة لكل حملة). إن زودك الفريق ب<strong>كود تحقق</strong> مرتبط بك وب هذه الحملة فقط، يظهر الرابط للتفاعل كالمعتاد ويُطلب منك إدخال الكود عند «تسجيل مشاركتي» (يمكنك أيضاً استخدام «تحقق من الكود وفتح رابط التفاعل» للتأكد المسبق إن رغبت).</p>
         <div id="partFlash" class="flash" style="display:none;margin-top:0.65rem" role="status"></div>
         <p id="partPlatformFilterHint" class="hint" style="display:none;margin-top:0.35rem" role="status"></p>
         <label for="partCampSelect" data-copy="labelCamp">اختر الحملة</label>
@@ -1716,12 +1716,11 @@
         return;
       }
       const locked = !!c.participationLinkLocked;
-      const cachedUnlock = locked ? getParticipationUnlockedUrl(c.id) : '';
-      const serverOpen = !locked ? String(c.participationUrl || '').trim() : '';
+      const serverOpen = String(c.participationUrl || '').trim();
       const rawLink = String(c.link || '').trim();
-      const fallbackHttps =
-        !locked && /^https?:\/\//i.test(rawLink) ? rawLink : '';
-      const url = (locked ? cachedUnlock : serverOpen) || fallbackHttps;
+      const fallbackHttps = /^https?:\/\//i.test(rawLink) ? rawLink : '';
+      const cachedUnlock = locked ? getParticipationUnlockedUrl(c.id) : '';
+      const url = serverOpen || fallbackHttps || cachedUnlock;
 
       setVerifyCodeLabelLocked(locked);
 
@@ -1743,11 +1742,14 @@
       const manualPart = manualNote
         ? `<div style="font-size:0.76rem;color:var(--muted);margin-top:0.45rem;line-height:1.5;padding:0.45rem 0.55rem;background:var(--input-bg);border-radius:8px;border:1px solid var(--border)">${escapeHtml(manualNote)}</div>`
         : '';
+      const verifyRegisterHint = locked
+        ? '<div style="margin-top:0.45rem;font-size:0.78rem;color:var(--muted);line-height:1.5"><strong>كود التحقق:</strong> أدخل الكود الذي أرسله الفريق عند «تسجيل مشاركتي» (يمكنك فتح الرابط أعلاه قبل ذلك).</div>'
+        : '';
       let linkPart;
       if (url) {
-        linkPart = `<div style="margin-top:0.65rem">${hintPart}<a class="part-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(btnLabel)}</a><div style="font-size:0.76rem;color:var(--muted);margin-top:0.4rem;line-height:1.45">${escapeHtml(returnHint)}</div>${manualPart}</div>`;
+        linkPart = `<div style="margin-top:0.65rem">${hintPart}<a class="part-open-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(btnLabel)}</a><div style="font-size:0.76rem;color:var(--muted);margin-top:0.4rem;line-height:1.45">${escapeHtml(returnHint)}</div>${verifyRegisterHint}${manualPart}</div>`;
       } else if (locked) {
-        linkPart = `<div style="margin-top:0.65rem;padding:0.65rem 0.75rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);font-size:0.82rem;color:var(--muted);line-height:1.55"><strong>رابط التفاعل مخفي:</strong> صدر لك كود تحقق من الفريق لهذه الحملة. أدخل الكود في الحقل أعلاه ثم اضغط «تحقق من الكود وفتح رابط التفاعل» لعرض الرابط والانتقال من حسابك على المنصة.</div>`;
+        linkPart = `<div style="margin-top:0.65rem;padding:0.65rem 0.75rem;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);font-size:0.82rem;color:var(--muted);line-height:1.55"><strong>لا يتوفر رابط بعد:</strong> صدر لك كود تحقق لهذه الحملة لكن لا يوجد رابط حملة أو وجهة يمكن عرضها. تواصل مع الفريق أو أدخل الكود ثم اضغط «تحقق من الكود وفتح رابط التفاعل» إن ظهر الزر.</div>`;
       } else {
         linkPart = `<div style="margin-top:0.65rem;font-size:0.8rem;color:var(--muted);line-height:1.45">لا يتوفر رابط يبدأ بـ <code dir="ltr">https://</code> أو حساب مستهدَف لعرض الوجهة. تواصل مع المنصة أو اختر حملة أخرى — يجب أن يوفّر منشئ الحملة رابط المنشور أو الموقع أو المتجر، أو معرّف مشترك لمتابعة حسابه.</div>`;
       }

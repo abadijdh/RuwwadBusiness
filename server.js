@@ -3940,6 +3940,7 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
 
     const rows = available.map((c) => {
       const campPlatEff = effectiveCampaignSocialPlatformIdForUserMatch(c);
+      const linkLocked = participationLinkLockedIds.has(String(c._id));
       return {
         id: String(c._id),
         title: c.title || '',
@@ -3950,11 +3951,10 @@ app.get('/api/portal/campaigns-for-participation', async (req, res) => {
         destinationKind: c.destinationKind || 'social',
         destinationKindAr: portalCampaignDestinationAr(c.destinationKind || 'social'),
         destinationLabel: (c.destinationLabel || '').trim(),
-        link: participationLinkLockedIds.has(String(c._id)) ? '' : c.link || '',
-        participationLinkLocked: participationLinkLockedIds.has(String(c._id)),
-        participationUrl: participationLinkLockedIds.has(String(c._id))
-          ? ''
-          : participationTrackedPortalHref(req, c, userId),
+        /** الرابط يُعرض دائماً لتسهيل المشاركة؛ إن وُجد كود تحقق يبقى مطلوباً عند «تسجيل مشاركتي» فقط */
+        link: c.link || '',
+        participationLinkLocked: linkLocked,
+        participationUrl: participationTrackedPortalHref(req, c, userId),
         participationManualNoteAr: portalCompletionNoteArForCampaignType(c.type),
         participationOpenLabelAr: portalParticipationOpenLabelAr(c.type),
         participationReturnHintAr: portalParticipationReturnHintAr(c.type, c.destinationKind),
@@ -4003,7 +4003,7 @@ app.post('/api/portal/register-interaction', async (req, res) => {
   }
 });
 
-/** بعد إصدار الفريق كوداً لمشترك على حملة: التحقق من الكود ثم إرجاع رابط التفاعل (لا يُعرض في قائمة الحملات قبل التحقق) */
+/** بعد إصدار الفريق كوداً: التحقق من الكود وإرجاع رابط التفاعل (اختياري — الرابط يظهر أيضاً في قائمة الحملات) */
 app.post('/api/portal/verify-participation-code', async (req, res) => {
   try {
     const t = portalTokenFromReq(req, req.body?.t);
