@@ -2807,6 +2807,11 @@ function whatsappMetaBillingHintAr() {
   return 'الفوترة ليست من منصة «رواد الأعمال» بل من Meta على حساب واتساب Business: تختلف حسب فئة القالب (تسويق، خدمة، مصادقة، …) وسياسة المحادثات. راجع صفحة التسعير الرسمية وBusiness Suite لرصد الاستهلاك.';
 }
 
+/** تذكير: تطبيق Meta منفصل للواتساب لتجنب الخلط مع إنستغرام أو منتجات أخرى */
+function whatsappDedicatedMetaAppHintAr() {
+  return 'تطبيق واتساب منفصل في Meta يقلّل الخلط؛ ضع WHATSAPP_META_APP_ID (اختياري) لمقارنة المعرف في اللوحة.';
+}
+
 function whatsappNonSubscriberSuggestCapFromEnv() {
   const n = Math.floor(Number(process.env.WHATSAPP_NON_SUBSCRIBER_SUGGEST_CAP));
   if (Number.isFinite(n) && n > 0) return Math.min(Math.max(n, 1), 2_000_000);
@@ -2823,6 +2828,8 @@ function whatsappNonSubscriberMaxBatchFromEnv() {
 app.get('/api/admin/whatsapp/status', async (_req, res) => {
   try {
     const cfg = whatsappCloud.whatsappCloudConfig();
+    const metaAppIdRaw = String(process.env.WHATSAPP_META_APP_ID ?? '').trim();
+    const whatsappMetaAppIdHint = metaAppIdRaw ? whatsappCloud.maskPhoneNumberId(metaAppIdRaw) : null;
     res.json({
       ok: true,
       configured: cfg.configured,
@@ -2832,6 +2839,8 @@ app.get('/api/admin/whatsapp/status', async (_req, res) => {
       nonSubscriberMaxBatch: whatsappNonSubscriberMaxBatchFromEnv(),
       metaWhatsappPricingUrl: META_WHATSAPP_PRICING_URL,
       metaBillingHintAr: whatsappMetaBillingHintAr(),
+      dedicatedWhatsappAppHintAr: whatsappDedicatedMetaAppHintAr(),
+      whatsappMetaAppIdHint,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

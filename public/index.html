@@ -1161,6 +1161,9 @@
     <div class="dash-page" data-page="whatsapp">
     <section id="sec-whatsapp-templates" class="card">
       <h2>واتساب — قوالب معتمدة (Cloud API)</h2>
+      <p class="hint" style="margin-top:0.25rem">
+        ل<strong>تجنب الخلط مع إنستغرام أو منتجات أخرى</strong>: أنشئ في <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener">Meta for Developers</a> تطبيقاً <strong>جديداً</strong> (نوع Business) وأضف منتج <strong>WhatsApp</strong> فقط، ثم ضع التوكن و<code dir="ltr">Phone number ID</code> من <strong>ذلك التطبيق</strong> في متغيرات <code dir="ltr">WHATSAPP_*</code> على السيرفر (تفاصيل إضافية في <code>.env</code>).
+      </p>
       <p class="hint" style="margin-top:0">
         لمراسلة من لم يبدأ محادثة خلال ٢٤ ساعة، يفرض واتساب استخدام <strong>قالب معتمد</strong> من Meta (ترحيب، اشتراك، تذكير…). لا يُرسل هذا القسم نصاً حراً؛ يمرّر اسم القالب والمتغيرات فقط إلى واجهة Graph كما في مدير القوالب.
       </p>
@@ -1492,10 +1495,13 @@
         const metaHint = String(s.metaBillingHintAr || '').trim();
         const limits = `سقف جمع أرقام غير المشتركين: ${cap} · حد الدفعة للإرسال: ${batch}.`;
         const metaLine = metaHint ? `${metaHint} ` : '';
+        const dedicated = String(s.dedicatedWhatsappAppHintAr || '').trim();
+        const appPart = s.whatsappMetaAppIdHint ? ` · معرّف تطبيق Meta (مختصر): ${s.whatsappMetaAppIdHint}` : '';
+        const dedPart = dedicated ? ` ${dedicated}` : '';
         if (s.configured) {
-          statusEl.textContent = `الربط مُعرَّف — Graph ${s.graphVersion} · Phone number ID: ${s.phoneNumberIdHint}. ${limits} ${metaLine}تسعير Meta: ${metaUrl}`;
+          statusEl.textContent = `الربط مُعرَّف — Graph ${s.graphVersion} · Phone number ID: ${s.phoneNumberIdHint}${appPart}. ${limits} ${metaLine}تسعير Meta: ${metaUrl}${dedPart}`;
         } else {
-          statusEl.textContent = `غير مُعرَّف واتساب API: أضِف WHATSAPP_CLOUD_ACCESS_TOKEN و WHATSAPP_PHONE_NUMBER_ID. ${limits} ${metaLine}تسعير Meta: ${metaUrl}`;
+          statusEl.textContent = `غير مُعرَّف واتساب API: أضِف WHATSAPP_CLOUD_ACCESS_TOKEN و WHATSAPP_PHONE_NUMBER_ID. ${limits} ${metaLine}تسعير Meta: ${metaUrl}${dedPart}`;
         }
         syncWhatsappRecipientsLimitUi();
       } catch (e) {
