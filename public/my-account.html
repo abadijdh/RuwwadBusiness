@@ -700,20 +700,6 @@
         </div>
       </div>
 
-      <div
-        id="hubInstagramOAuthBanner"
-        class="hint"
-        style="display: none; margin-top: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); line-height: 1.55"
-        role="region"
-        aria-label="ربط إنستغرام"
-      >
-        <strong>التحقق من إنستغرام (Meta):</strong>
-        <span id="hubInstagramOAuthBannerText" style="display: block; margin-top: 0.35rem"></span>
-        <button type="button" class="portal-svc-btn" id="btnHubOpenProfileForIg" style="margin-top: 0.5rem">
-          فتح «بياناتي» وعرض زر التحقق
-        </button>
-      </div>
-
       <p class="portal-hub-lead hint">اضغط أيقونة لفتح القسم؛ بعد الانتهاء اضغط «رجوع إلى حسابي» للعودة هنا.</p>
 
       <div class="portal-hub-grid" role="navigation" aria-label="أقسام حسابي">
@@ -865,15 +851,10 @@
 
       <section class="card portal-view-section" id="secProfile">
         <h2 data-copy="secProfileTitle">بيانات مختصرة</h2>
-        <div id="igOAuthFlash" class="flash" style="display:none;margin-top:0.35rem" role="status"></div>
         <div id="profileGrid" class="profile-grid"></div>
-        <div id="instagramOAuthRow" class="hint" style="display:none;margin-top:0.65rem;padding:0.55rem 0.65rem;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);line-height:1.55">
-          <strong>ربط إنستغرام (Meta):</strong>
-          <span id="instagramOAuthHint" style="display:block;margin-top:0.35rem"></span>
-          <div style="margin-top:0.45rem">
-            <a id="linkInstagramOAuth" class="portal-svc-btn" href="#" style="display:inline-block;text-decoration:none;text-align:center;padding:0.45rem 0.85rem">التحقق من حسابي عبر إنستغرام</a>
-          </div>
-        </div>
+        <p class="hint" style="margin-top: 0.65rem; line-height: 1.55">
+          <strong>التحقق من حسابك على إنستغرام:</strong> يتم عبر <strong>كود التحقق</strong> الذي يزودك به الفريق عند المشاركة في الحملة (قسم «مشاركة بحملة»). لا يُطلب منك هنا تسجيل الدخول إلى Meta أو ربط التطبيق بحسابك.
+        </p>
       </section>
 
       <section class="card portal-view-section" id="secInteractions">
@@ -1036,92 +1017,6 @@
     }
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-    }
-
-    function showIgOAuthFlash(ok, msg) {
-      const el = document.getElementById('igOAuthFlash');
-      if (!el) return;
-      if (!msg) {
-        el.style.display = 'none';
-        el.textContent = '';
-        el.className = '';
-        return;
-      }
-      el.style.display = 'block';
-      el.className = 'flash ' + (ok ? 'ok' : 'err');
-      el.textContent = msg;
-    }
-
-    function flashInstagramOAuthResult() {
-      const ig = qs('ig');
-      if (!ig) return;
-      const map = {
-        ok: ['تم التحقق من إنستغرام وربطه بملفك.', true],
-        denied: ['ألغيت تفويض إنستغرام أو رُفض الدخول.', false],
-        mismatch: ['حساب إنستغرام الذي سجّلت دخوله لا يطابق اسم المستخدم في ملفك. صحّح اليوزر عندنا أو استخدم الحساب المطابق.', false],
-        token: ['تعذّر إكمال الربط مع خوادم Meta. راجع إعداد التطبيق أو حاول لاحقاً.', false],
-        state: ['انتهت صلاحية خطوة الربط. أعد المحاولة من الزر أدناه.', false],
-        session: ['انتهت الجلسة. أعد الدخول من «دخول حسابي».', false],
-        platform: ['الربط عبر إنستغرام متاح فقط عندما تكون منصة ملفك «إنستغرام».', false],
-        missing: ['استجابة غير مكتملة من إنستغرام.', false],
-        nosetup: ['إعدادات إنستغرام غير مكتملة على الخادم.', false],
-      };
-      const row = map[ig];
-      showIgOAuthFlash(row ? row[1] : false, row ? row[0] : `تعذّر الربط (${escapeHtml(ig)}).`);
-      try {
-        const u = new URL(window.location.href);
-        u.searchParams.delete('ig');
-        window.history.replaceState({}, '', u.pathname + (u.search || ''));
-      } catch (_) {}
-    }
-
-    async function refreshInstagramOAuthUi(profile) {
-      const row = document.getElementById('instagramOAuthRow');
-      const hint = document.getElementById('instagramOAuthHint');
-      const a = document.getElementById('linkInstagramOAuth');
-      const hubBan = document.getElementById('hubInstagramOAuthBanner');
-      const hubTxt = document.getElementById('hubInstagramOAuthBannerText');
-      const hubBtn = document.getElementById('btnHubOpenProfileForIg');
-      if (!row || !hint || !a) return;
-      let configured = false;
-      try {
-        const r = await fetch(portalApiUrl('/api/portal/instagram/oauth/status'), {
-          cache: 'no-store',
-          credentials: 'same-origin',
-          headers: { Accept: 'application/json' },
-        });
-        const j = await r.json().catch(() => ({}));
-        configured = !!j.configured;
-      } catch {
-        configured = false;
-      }
-      const isIg = String(profile?.socialPlatform || 'instagram') === 'instagram';
-      const hasUser = !!(profile?.usernameOnPlatform && String(profile.usernameOnPlatform).trim());
-      if (!isIg || !hasUser) {
-        row.style.display = 'none';
-        if (hubBan) hubBan.style.display = 'none';
-        return;
-      }
-      row.style.display = 'block';
-      if (!configured) {
-        hint.textContent =
-          'لم يُضبط بعد على الخادم: أضف الفريق INSTAGRAM_APP_ID و INSTAGRAM_APP_SECRET و INSTAGRAM_REDIRECT_URI في الاستضافة (مع تطابق رابط العودة في لوحة تطبيق Meta).';
-        a.style.display = 'none';
-        if (hubBan) hubBan.style.display = 'none';
-        return;
-      }
-      hint.textContent = profile.instagramVerified
-        ? 'تم التحقق مسبقاً. يمكنك إعادة الربط لتحديث الحالة إن لزم.'
-        : 'يفتح نافذة Meta: سجّل الدخول بحساب إنستغرام احترافي (Business/Creator) يطابق اسم المستخدم في ملفك.';
-      a.style.display = 'inline-block';
-      a.href = portalApiUrl('/api/portal/instagram/oauth/start');
-      if (hubBan && hubTxt && hubBtn) {
-        hubBan.style.display = 'block';
-        hubTxt.textContent = profile.instagramVerified
-          ? 'تم ربط إنستغرام سابقاً. لإعادة التحقق افتح «بياناتي» واضغط الرابط هناك.'
-          : 'زر «التحقق من حسابي عبر إنستغرام» داخل قسم «بياناتي» وليس على هذه الشاشة. اضغط الزر أدناه للانتقال مباشرة.';
-        hubBtn.onclick = () => openPortalAccountSection('secProfile');
-      }
     }
 
     const portalHubScreenEl = () => document.getElementById('portalHubScreen');
@@ -2015,7 +1910,6 @@
             : '<tr><td colspan="5" style="color:var(--muted)">لم تُسجَّل سدادات للمنصة من حسابك بعد</td></tr>';
         }
 
-        await refreshInstagramOAuthUi(p);
         await loadParticipationCampaigns();
       } catch {
         if (gateErrFetchEl) {
@@ -2027,7 +1921,6 @@
 
     (async function bootMyAccount() {
       await applyPublicCopyFromJson('myAccount');
-      flashInstagramOAuthResult();
       loadPortalSvcOptions();
       fetchAndPaintPortalSummary();
     })();

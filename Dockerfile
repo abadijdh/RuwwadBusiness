@@ -6,7 +6,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY server.js ./
-COPY instagram-oauth.js ./
 COPY public ./public/
 
 ENV NODE_ENV=production

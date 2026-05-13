@@ -1159,8 +1159,6 @@ userSchema.index(
 userSchema.index({ phone: 1 }, { unique: true, sparse: true });
 const User = mongoose.model('User', userSchema);
 
-const instagramOAuth = require('./instagram-oauth');
-
 /** ذاكرة مؤقتة لرمز جوال (التطوير فقط — الإنتاج يستبدل ببوابة SMS) */
 const phoneOtpPending = new Map();
 /** دخول «حسابي» بالجوال — المفتاح رقم الجوال المطبَّع */
@@ -3063,121 +3061,6 @@ app.get('/api/portal/summary', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-});
-
-/** حالة ضبط OAuth إنستغرام (Meta) — للواجهة فقط */
-app.get('/api/portal/instagram/oauth/status', (_req, res) => {
-  try {
-    const c = instagramOAuth.getInstagramOAuthConfig();
-    res.json({ ok: true, configured: c.configured });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/portal/instagram/oauth/start', async (req, res) => {
-  try {
-    const c = instagramOAuth.getInstagramOAuthConfig();
-    if (!c.configured) {
-      return res
-        .status(503)
-        .type('html')
-        .send(
-          '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>إنستغرام</title></head><body style="font-family:system-ui,sans-serif;padding:1.25rem;line-height:1.6"><p>لم يُضبط ربط إنستغرام على الخادم. يحتاج الفريق إلى إضافة في الاستضافة: <code dir="ltr">INSTAGRAM_APP_ID</code>، <code dir="ltr">INSTAGRAM_APP_SECRET</code>، <code dir="ltr">INSTAGRAM_REDIRECT_URI</code> مع مطابقة الرابط في لوحة Meta.</p><p><a href="javascript:history.back()">رجوع</a></p></body></html>'
-        );
-    }
-    const t = portalTokenFromReq(req);
-    if (!t || t.length < 24) {
-      return res.redirect(302, '/subscriber-login');
-    }
-    const user = await User.findOne({ portalToken: t }).select('_id').lean();
-    if (!user) {
-      return res.redirect(302, '/subscriber-login');
-    }
-    const url = instagramOAuth.buildInstagramAuthorizeUrl({ portalToken: t });
-    res.redirect(302, url);
-  } catch (err) {
-    console.warn('[instagram oauth start]', err.message);
-    res
-      .status(500)
-      .type('html')
-      .send(
-        `<!DOCTYPE html><html lang="ar" dir="rtl"><meta charset="utf-8"><body style="padding:1rem;font-family:sans-serif"><p>${String(
-          err.message || 'خطأ'
-        )}</p></body></html>`
-      );
-  }
-});
-
-app.get('/api/portal/instagram/oauth/callback', async (req, res) => {
-  const publicBase = String(process.env.PUBLIC_URL || process.env.PUBLIC_BASE_URL || '')
-    .trim()
-    .replace(/\/+$/, '');
-  let portalTok = '';
-  const redirectAccount = (igCode) => {
-    const tPart =
-      portalTok && String(portalTok).length >= 24 ? `t=${encodeURIComponent(String(portalTok))}&` : '';
-    const path = `/my-account.html?${tPart}ig=${encodeURIComponent(igCode)}`;
-    if (publicBase && /^https?:\/\//i.test(publicBase)) {
-      return res.redirect(302, `${publicBase}${path}`);
-    }
-    return res.redirect(302, path);
-  };
-  try {
-    if (req.query.error) {
-      if (req.query.state) {
-        portalTok = instagramOAuth.parseInstagramOAuthState(req.query.state) || '';
-      }
-      return redirectAccount('denied');
-    }
-    const code = req.query.code;
-    const state = req.query.state;
-    if (!code || !state) {
-      return redirectAccount('missing');
-    }
-    portalTok = instagramOAuth.parseInstagramOAuthState(state);
-    if (!portalTok) {
-      return redirectAccount('state');
-    }
-    const user = await User.findOne({ portalToken: portalTok }).lean();
-    if (!user) {
-      return redirectAccount('session');
-    }
-    if (String(user.socialPlatform || 'instagram') !== 'instagram') {
-      return redirectAccount('platform');
-    }
-    const cfg = instagramOAuth.getInstagramOAuthConfig();
-    if (!cfg.configured) {
-      return redirectAccount('nosetup');
-    }
-    const tokenJson = await instagramOAuth.exchangeInstagramAuthorizationCode(code, cfg.redirectUri);
-    let access = String(tokenJson.access_token || '');
-    try {
-      access = await instagramOAuth.exchangeInstagramLongLivedToken(access);
-    } catch (_) {
-      /* يبقى الرمز القصير لطلب /me */
-    }
-    const me = await instagramOAuth.fetchInstagramMe(access);
-    const got = instagramOAuth.normalizeInstagramUsername(me.username);
-    const expect = instagramOAuth.normalizeInstagramUsername(user.instagramUsername);
-    if (!expect || got !== expect) {
-      return redirectAccount('mismatch');
-    }
-    await User.updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          instagramVerified: true,
-          instagramGraphUserId: me.igUserId || '',
-          instagramLinkedAt: new Date(),
-        },
-      }
-    );
-    return redirectAccount('ok');
-  } catch (err) {
-    console.warn('[instagram oauth callback]', err.message);
-    return redirectAccount('token');
   }
 });
 
